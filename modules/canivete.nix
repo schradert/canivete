@@ -14,7 +14,7 @@
   inherit (options) mkOption;
   inherit (strings) concatMapStringsSep substring replaceStrings stringLength concatStrings concatStringsSep toLower toUpper;
   inherit (trivial) concat flip pipe id mergeAttrs;
-  inherit (types) attrsOf deferredModule enum listOf nullOr raw str;
+  inherit (types) attrsOf deferredModule enum listOf nullOr raw str submodule;
   inherit (versions) splitVersion;
 in {
   perSystem._module.args.canivete = canivete;
@@ -136,6 +136,9 @@ in {
     mkModuleOption = mkOverrideOption {
       type = deferredModule;
       default = {};
+    };
+    mkNestedSubmodule = module: mkOption {
+      type = attrsOf (submodule module);
     };
     mkSystemOption = mkOverrideOption {
       type = enum config.systems;
