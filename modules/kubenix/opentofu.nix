@@ -5,8 +5,8 @@
     ...
   }: let
     inherit (config.canivete.kubenix) clusters;
-    inherit (lib) attrNames filterAttrs getExe mapAttrsToList mkIf mkOption pipe types;
-    inherit (types) attrsOf coercedTo enum nullOr raw submodule;
+    inherit (lib) attrNames filterAttrs getExe mapAttrsToList mapAttrs' mkIf mkOption nameValuePair pipe types;
+    inherit (types) attrsOf coercedTo enum nullOr raw str submodule;
   in {
     options.canivete.opentofu = {
       workspaces = mkOption {
@@ -19,6 +19,12 @@
         }));
       };
     };
+    config.canivete.kubenix.sharedModules = {
+      options.canivete.root = mkOption {
+        type = str;
+        description = "Name of node to treat as deployment root";
+      };
+    };
     config.canivete.opentofu.sharedModules = {
       flake,
       pkgs,
@@ -26,17 +32,25 @@
       ...
     }: let
       inherit (workspace.config.kubernetes) cluster;
+      inherit (cluster.config) canivete kubernetes;
+      nixosClusterNodes =
+        filterAttrs
+        (_: node: node.canivete.os == "nixos" && node.profiles.system.canivete.configuration.config.canivete.kubernetes.enable)
+        flake.config.canivete.deploy.nodes;
     in {
       config = mkIf (cluster != null) {
         resource.null_resource.kubernetes = {
-          depends_on = pipe flake.config.canivete.deploy.nodes [
-            (filterAttrs (_: node: node.canivete.os == "nixos" && node.profiles.system.canivete.configuration.config.canivete.kubernetes.enable))
+          depends_on = pipe nixosClusterNodes [
             (mapAttrsToList (name: _: "null_resource.nixos_${name}_system"))
             (mkIf (workspace.name == "deploy"))
           ];
-          triggers.drv = cluster.config.kubernetes.resultYAML.drvPath;
-          provisioner.local-exec.command = "${getExe cluster.config.canivete.script} ${getExe pkgs.kapp} deploy --yes --diff-changes --app everything --file -";
+          triggers.drv = kubernetes.resultYAML.drvPath;
+          provisioner.local-exec.command = "${getExe canivete.script} ${getExe pkgs.kapp} deploy --yes --diff-changes --app everything --file -";
         };
+        module = pipe nixosClusterNodes [
+          (filterAttrs (name: _: name != canivete.root))
+          (mapAttrs' (name: _: nameValuePair "nixos_${name}_system_install" {depends_on = ["module.nixos_${canivete.root}_system_install"];}))
+        ];
       };
     };
   };

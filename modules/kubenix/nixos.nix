@@ -9,13 +9,13 @@ in {
     ...
   }: let
     inherit (lib) attrValues mkEnableOption mkOption mkIf mkMerge mkDefault types;
-    inherit (flakeConfig.canivete.meta) domain root;
+    inherit (flakeConfig.canivete.meta) domain;
     cfg = config.canivete.kubernetes;
     cfg_k3s = config.services.k3s;
-    isRoot = node.name == root;
   in {
     options.canivete.kubernetes = {
       enable = mkEnableOption "kubernetes as a service";
+      root = mkEnableOption "root kubernetes server";
       images = mkOption {
         type = types.attrsOf types.package;
         default = {};
@@ -44,14 +44,14 @@ in {
         };
         virtualisation.containerd.enable = true;
       }
-      (mkIf isRoot {
+      (mkIf cfg.root {
         services.k3s = {
           clusterInit = true;
           role = "server";
           images = attrValues cfg.images;
         };
       })
-      (mkIf (!isRoot) {canivete.kubernetes.k3s.server = "https://${domain}:6443";})
+      (mkIf (!cfg.root) {canivete.kubernetes.k3s.server = "https://${domain}:6443";})
       (mkIf (cfg_k3s.role == "server") {
         canivete.kubernetes.k3s = {
           # Barebones

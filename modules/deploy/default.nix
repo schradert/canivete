@@ -7,7 +7,7 @@ flake @ {
   ...
 }: let
   inherit (canivete) mkFlakeOption mkModuleOption mkNullableOption mkSystemOption;
-  inherit (config.canivete.meta) root people;
+  inherit (config.canivete.meta) people;
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
   inherit (lib) attrNames evalModules filterAttrsRecursive flip getExe mapAttrs mkDefault mkIf mkMerge mkOption optional optionalAttrs types;
@@ -154,8 +154,6 @@ flake @ {
             }
             (mkIf (flakes.disko == null) {phases = ["kexec" "install" "reboot"];})
             (mkIf (null_resource ? sops) {depends_on = ["null_resource.sops"];})
-            # TODO make this dynamic. should system be a default?
-            (mkIf (node.name != root) {depends_on = ["module.nixos_${root}_system_install"];})
           ];
           data.external.${resource_name}.depends_on = ["module.${resource_name}_install"];
         })
