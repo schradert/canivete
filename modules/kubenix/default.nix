@@ -71,6 +71,7 @@ flake @ {inputs, ...}: {
             };
           };
         };
+        # FIXME why does the template flake say there are multiple definitions of this?!
         options.kubernetes.helm.releases = mkOption {
           type = attrsOf (submodule ({config, ...}: {
             options.extraResources = mkOption {
@@ -86,10 +87,10 @@ flake @ {inputs, ...}: {
               {metadata.namespace = mkDefault config.namespace;}
             ];
             config.chart = mkDefault (helm.fetch {
-              repo = "https://bjw-s.github.io/helm-charts";
+              repo = "https://bjw-s-labs.github.io/helm-charts";
               chart = "app-template";
-              version = "3.7.3";
-              sha256 = "sha256-ZkgsF4Edl+s044BR4oQIXDS3S6pT/B8V3TEjDQzx6eE=";
+              version = "4.1.1";
+              sha256 = "sha256-rwJTCjeC1Z+mvXlwI4EJxONn7ziixOcxruDmD2t+yAM=";
             });
           }));
         };
