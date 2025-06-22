@@ -122,6 +122,10 @@ in {
       type = listOf str;
       default = [];
     };
+    mkAttrsOption = type: mkOverrideOption {
+      type = attrsOf type;
+      default = {};
+    };
     mkEnabledOption = doc:
       mkOption {
         type = types.bool;
