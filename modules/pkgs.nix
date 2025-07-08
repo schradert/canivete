@@ -56,6 +56,12 @@ in {
               }
               // overrides);
           wrapFlags = pkg: args: final.wrapProgram pkg pkg.name pkg.name args {};
+          patchOut = pkg: cmd:
+            final.runCommand "${pkg.name}-patched" {} ''
+              cp -a ${pkg} $out
+              chmod -R u+w $out
+              ${cmd}
+            '';
         });
     };
   };
