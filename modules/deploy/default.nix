@@ -258,9 +258,16 @@ in {
           }
           (mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
           # TODO can I do this for other systems too?
-          (mkIf (flakes.home-manager != null) ({utils, ...}: {
+          (mkIf (flakes.home-manager != null) ({
+            node,
+            perSystem,
+            profile,
+            utils,
+            ...
+          }: {
             imports = [flakes.home-manager.nixosModules.home-manager];
-            home-manager.sharedModules = [modules.home-manager {_module.args = {inherit utils;};}];
+            home-manager.extraSpecialArgs = {inherit canivete flake node perSystem profile utils;};
+            home-manager.sharedModules = [modules.home-manager];
           }))
         ];
         droid.imports = [modules.system flakes.home-manager.nixosModules.home-manager];
