@@ -228,21 +228,19 @@ in {
       config.canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
-        home-manager.imports = [modules.shared];
         system = mkMerge [
           modules.shared
           # TODO can I do this for other systems too?
           # deadnix: skip
           (mkIf (flakes.home-manager != null) (systemConfiguration @ {pkgs, ...}: {
-            home-manager.sharedModules = [
-              {
-                imports = [modules.home-manager];
-                _module.args = {inherit systemConfiguration;};
-              }
-            ];
             home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) people.users;
+            home-manager.sharedModules = [
+              modules.home-manager
+              {_module.args = {inherit systemConfiguration;};}
+            ];
           }))
         ];
+        home-manager.imports = [modules.shared];
         nixos = mkMerge [
           {
             imports = [
@@ -258,16 +256,9 @@ in {
           }
           (mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
           # TODO can I do this for other systems too?
-          (mkIf (flakes.home-manager != null) ({
-            node,
-            perSystem,
-            profile,
-            utils,
-            ...
-          }: {
+          (mkIf (flakes.home-manager != null) ({utils, ...}: {
             imports = [flakes.home-manager.nixosModules.home-manager];
-            home-manager.extraSpecialArgs = {inherit canivete flake node perSystem profile utils;};
-            home-manager.sharedModules = [modules.home-manager];
+            home-manager.extraSpecialArgs = {inherit utils;};
           }))
         ];
         droid.imports = [modules.system flakes.home-manager.nixosModules.home-manager];
