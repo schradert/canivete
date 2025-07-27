@@ -232,12 +232,16 @@ in {
           modules.shared
           # TODO can I do this for other systems too?
           # deadnix: skip
-          (mkIf (flakes.home-manager != null) (systemConfiguration @ {pkgs, ...}: {
+          (mkIf (flakes.home-manager != null) (systemConfiguration @ {
+            node,
+            perSystem,
+            pkgs,
+            profile,
+            ...
+          }: {
+            home-manager.extraSpecialArgs = {inherit canivete flake node perSystem profile systemConfiguration;};
             home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) people.users;
-            home-manager.sharedModules = [
-              modules.home-manager
-              {_module.args = {inherit systemConfiguration;};}
-            ];
+            home-manager.sharedModules = [modules.home-manager];
           }))
         ];
         home-manager.imports = [modules.shared];
@@ -261,9 +265,12 @@ in {
             home-manager.extraSpecialArgs = {inherit utils;};
           }))
         ];
-        droid.imports = [modules.system flakes.home-manager.nixosModules.home-manager];
-        # TODO figure out home-manager inside nix-darwin
-        darwin.imports = [hostnameModule modules.system];
+        droid.imports = [modules.system];
+        darwin = mkMerge [
+          hostnameModule
+          modules.system
+          (mkIf (flakes.home-manager != null) flakes.home-manager.darwinModules.home-manager)
+        ];
       };
     };
     default = {};
