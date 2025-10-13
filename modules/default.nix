@@ -8,7 +8,7 @@
 in {
   imports = [
     ./deploy
-    ./kubenix
+    ./kubernetes
     ./opentofu
     ./scripts
     ./sops

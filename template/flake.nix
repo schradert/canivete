@@ -23,7 +23,8 @@
     opentofu-registry.flake = false;
 
     # Containers + Kubernetes
-    kubenix.url = "github:hall/kubenix";
+    nixidy.url = "github:arnarg/nixidy";
+    nixhelm.url = "github:farcaller/nixhelm";
     nix2container.url = "github:nlewo/nix2container";
     # NOTE Arion has no argument to prefer buildLayeredImage when streamLayeredImage doesn't work across systems
     # arion.url = "github:hercules-ci/arion";
@@ -36,7 +37,7 @@
     process-compose.url = "github:Platonic-Systems/process-compose-flake";
     services.url = "github:juspay/services-flake";
 
-    # Misc.
+    # Misc. /h
     dream2nix.url = "github:nix-community/dream2nix";
     flake-schemas.url = "github:DeterminateSystems/flake-schemas";
     nix-flake-schemas.url = "github:DeterminateSystems/nix-src/flake-schemas";
@@ -49,57 +50,64 @@
   # 3. root flake-parts module
   outputs = inputs:
     inputs.canivete.lib.mkFlake {inherit inputs;} [] {
-      canivete.meta = {
-        root = "root";
-        domain = "example.com";
-        people.me = "username";
-        people.users.username.name = "name";
-      };
-      canivete.deploy = {
-        nodes."root".profiles.system.canivete.configuration.canivete.kubernetes.enable = true;
-        canivete.modules.home-manager.home.stateVersion = "25.05";
-        canivete.modules.nixos = {
-          boot.loader.systemd-boot.enable = true;
-          system.stateVersion = "25.05";
-          disko.devices.disk.base = {
-            device = "/dev/sda";
-            type = "disk";
-            content.type = "gpt";
-            content.partitions = {
-              ESP = {
-                priority = 1;
-                type = "EF00";
-                size = "500M";
-                content.type = "filesystem";
-                content.format = "vfat";
-                content.mountpoint = "/boot";
-              };
-              root = {
-                priority = 2;
-                end = "-1G";
-                content.type = "filesystem";
-                content.format = "ext4";
-                content.mountpoint = "/";
-              };
-              swap = {
-                size = "100%";
-                content.type = "swap";
-                content.discardPolicy = "both";
-                content.resumeDevice = true;
+      canivete = {
+        meta = {
+          root = "root";
+          domain = "example.com";
+          people.me = "username";
+          people.users.username.name = "name";
+        };
+        deploy = {
+          nodes."root".profiles.system.canivete.configuration.canivete.kubernetes.enable = true;
+          canivete.modules.home-manager.home.stateVersion = "25.05";
+          canivete.modules.nixos = {
+            boot.loader.systemd-boot.enable = true;
+            system.stateVersion = "25.05";
+            disko.devices.disk.base = {
+              device = "/dev/sda";
+              type = "disk";
+              content.type = "gpt";
+              content.partitions = {
+                ESP = {
+                  priority = 1;
+                  type = "EF00";
+                  size = "500M";
+                  content.type = "filesystem";
+                  content.format = "vfat";
+                  content.mountpoint = "/boot";
+                };
+                root = {
+                  priority = 2;
+                  end = "-1G";
+                  content.type = "filesystem";
+                  content.format = "ext4";
+                  content.mountpoint = "/";
+                };
+                swap = {
+                  size = "100%";
+                  content.type = "swap";
+                  content.discardPolicy = "both";
+                  content.resumeDevice = true;
+                };
               };
             };
           };
         };
-      };
-      perSystem.canivete = {
-        kubenix.clusters.deploy = {
-          canivete.deploy.fetchKubeconfig = "ssh \"root\" sudo k3s kubectl config view --raw | sed 's/127\.0\.0\.1/\"example.com\"/'";
-          kubernetes.helm.releases.nginx.values.controllers.nginx.containers.nginx.image = {
-            repository = "nginx";
-            tag = "1.27.4-bookworm";
+        nixidy = {
+          k8s = "rke2";
+          shared = {charts, ...}: {
+            applications.nginx.helm.releases.nginx = {
+              chart = charts.bjw-s-labs.app-template;
+              values.controllers.nginx.containers.nginx.image = {
+                repository = "nginx";
+                tag = "1.27.4-bookworm";
+              };
+            };
           };
         };
-        opentofu.workspaces.deploy.kubernetes.cluster = "deploy";
+        perSystem.canivete = {
+          opentofu.workspaces.deploy.kubernetes.cluster = "deploy";
+        };
       };
     };
 }

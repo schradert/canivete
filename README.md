@@ -3,7 +3,7 @@
 Nix framework for common development and infrastructure tooling like:
 
 1. Managing infrastructure declaratively with OpenTofu through terranix
-2. Administering kubernetes clusters with kubenix
+2. Administering kubernetes clusters with nixidy
 3. Deploying Nix profiles (i.e. NixOS, nix-darwin, home-manager, etc.)
 4. Package derivations with dream2nix
 5. Container building and running with docker-compose through arion
