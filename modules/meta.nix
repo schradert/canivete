@@ -3,6 +3,7 @@
   lib,
   ...
 }: let
+  inherit (config.canivete.meta) people domain;
   inherit (lib) mkOption types;
   inherit (types) submodule str attrsOf strMatching;
   userSubmodule = submodule {
@@ -49,14 +50,9 @@ in {
         options.my = mkOption {
           type = userSubmodule;
           description = "The user details associated with 'me'";
-          default = with config.canivete.meta.people; users.${me};
+          default = with people; users.${me};
         };
       };
     };
-  };
-  # TODO does this work?!
-  config.canivete.schemas.schemas.canivete.canivete.children.meta.children = {
-    inherit (config) domain root;
-    inherit (config.people) me;
   };
 }

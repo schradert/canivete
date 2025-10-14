@@ -3,35 +3,24 @@
   inputs,
   lib,
   ...
-}: let
-  inherit (lib) getAttr mapAttrs mergeAttrsList mkDefault;
-in {
+}: {
   imports = [
     ./deploy
     ./kubernetes
     ./opentofu
-    ./scripts
     ./sops
 
-    ./arion.nix
     ./canivete.nix
-    ./climod.nix
-    ./devShells.nix
-    ./dream2nix.nix
-    ./just.nix
+    ./devenv.nix
     ./meta.nix
-    ./nix2container.nix
     ./pkgs.nix
-    ./pre-commit.nix
-    ./processes.nix
-    ./schemas.nix
   ];
-  systems = mkDefault (import inputs.systems);
+  systems = lib.mkDefault (import inputs.systems);
 
   # Expose everything canivete to flake top level
-  flake.canivete = mergeAttrsList [
+  flake.canivete = lib.mergeAttrsList [
     (config.canivete or {})
-    (mapAttrs (_: getAttr "canivete") config.allSystems)
+    (builtins.mapAttrs (_: builtins.getAttr "canivete") config.allSystems)
     {inherit inputs;}
   ];
 }

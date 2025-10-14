@@ -14,7 +14,7 @@ flake @ {
 in {
   options.canivete.deploy = mkOption {
     type = submodule {
-      imports = [./generic.nix];
+      imports = [(import ./generic.nix flake)];
       options.nodes = mkOption {
         type = attrsOf (submodule (import ./node.nix flake));
         default = {};

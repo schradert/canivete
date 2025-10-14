@@ -12,7 +12,7 @@ in
     name,
     ...
   }: {
-    imports = [./generic.nix];
+    imports = [(import ./generic.nix flake)];
     options = {
       hostname = mkOption {
         type = str;

@@ -10,7 +10,7 @@
     systems.url = "github:nix-systems/default";
 
     # Development
-    pre-commit.url = "github:cachix/git-hooks.nix";
+    devenv.url = "github:cachix/devenv";
   };
   outputs = inputs:
     inputs.flake-parts.lib.mkFlake {inherit inputs;} ({

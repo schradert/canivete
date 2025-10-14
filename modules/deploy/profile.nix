@@ -20,7 +20,7 @@ in
     inherit (flakes.deploy.lib.${node.config.canivete.system}) activate;
     inherit (node.config.canivete) os system;
   in {
-    imports = [./generic.nix];
+    imports = [(import ./generic.nix flake)];
     options.path = mkOption {
       type = pathInStore;
       default = activator configuration;
