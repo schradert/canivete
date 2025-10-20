@@ -89,7 +89,7 @@
           (lib.mkIf languages.javascript.enable {
             biome.enable = true;
           })
-          (lib.mkIf languages.golang.enable {
+          (lib.mkIf languages.go.enable {
             golangci-lint.enable = true;
           })
         ];

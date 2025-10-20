@@ -123,7 +123,7 @@ flake @ {inputs, ...}: {
       };
     };
     config = mkIf opentofu.enable {
-      canivete.just.recipes."tofu *ARGS" = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
+      canivete.devenv.shells.default.scripts.tofu = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- {{ ARGS }}";
       canivete.opentofu.sharedModules = {workspace, ...}: let
         inherit (workspace.config) encryptedState plugins;
       in {

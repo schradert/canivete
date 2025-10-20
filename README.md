@@ -20,7 +20,6 @@ Nix framework for common development and infrastructure tooling like:
 
 1. Start a new project with `nix flake init --template github:schradert/canivete`
 2. Open the project shell by entering project directory and running `nix develop`
-3. See available commands by running `just`
 
 ## Notes
 

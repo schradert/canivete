@@ -13,33 +13,10 @@
     devenv.url = "github:cachix/devenv";
   };
   outputs = inputs:
-    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({
-      canivete,
-      lib,
-      ...
-    }: {
+    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({canivete, ...}: {
       imports = [./modules];
       flake.lib = canivete;
-      # TODO what about directories? how should these be handled? use every nix file?
-      flake.flakeModules = let
-        inherit (builtins) baseNameOf map match head listToAttrs;
-        inherit (lib) flip nameValuePair pipe;
-      in
-        pipe ./modules [
-          canivete.filesets.nix.files
-          (map (file:
-            flip nameValuePair file (pipe file [
-              baseNameOf
-              (match "^(.+)\.nix$")
-              head
-            ])))
-          listToAttrs
-        ];
-      # TODO add WAYYY more templates
-      flake.templates.default = {
-        path = ./template;
-        description = "Basic canivete template";
-      };
-      perSystem.canivete.pre-commit.languages.shell.enable = true;
+      flake.templates.default.path = ./template;
+      perSystem.canivete.devenv.shells.default.languages.shell.enable = true;
     });
 }

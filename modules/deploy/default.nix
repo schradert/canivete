@@ -12,6 +12,7 @@ flake @ {
   inherit (lib) filterAttrsRecursive flip mapAttrs mkIf mkMerge mkOption optional types;
   inherit (types) attrsOf submodule;
 in {
+  imports = [./opentofu.nix];
   options.canivete.deploy = mkOption {
     type = submodule {
       imports = [(import ./generic.nix flake)];
@@ -91,7 +92,6 @@ in {
     description = "Deployment with deploy-rs and nixos-anywhere";
   };
   config = let
-    inherit (lib) flatten flip getAttr getAttrFromPath mapAttrsToList pipe;
     typeNodes = type: let
       inherit (lib) attrValues filterAttrs getAttrFromPath head length mapAttrs pipe;
       typeProfiles = funcs: node: pipe node.profiles ([(filterAttrs (_: profile: profile.canivete.type == type)) attrValues] ++ funcs);
@@ -116,17 +116,6 @@ in {
       ];
       perSystem = {system, ...}: {
         checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
-        canivete.opentofu.workspaces.deploy = {
-          modules.imports = pipe nodes [
-            (mapAttrsToList (_:
-              flip pipe [
-                (getAttr "profiles")
-                (mapAttrsToList (_: getAttrFromPath ["canivete" "opentofu"]))
-              ]))
-            flatten
-          ];
-          plugins = ["hashicorp/null" "hashicorp/external"];
-        };
       };
     };
 }
