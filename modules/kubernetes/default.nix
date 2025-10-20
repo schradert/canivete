@@ -41,7 +41,7 @@ in {
         system,
         ...
       }: {
-        canivete.pre-commit.settings.hooks.lychee.toml.exclude = ["svc.cluster.local"];
+        devenv.shells.default.git-hooks.hooks.lychee.toml.exclude = ["svc.cluster.local"];
         legacyPackages.nixidyEnvs.${system} = inputs.nixidy.lib.mkEnvs {
           inherit pkgs;
           inherit (nixidy) envs libOverlay;
