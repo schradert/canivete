@@ -3,6 +3,8 @@ flake @ {
   config,
   inputs,
   lib,
+  # deadnix: skip
+  withSystem,
   ...
 }: let
   inherit (canivete) mkFlakeOption mkModuleOption;
