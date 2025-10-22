@@ -73,11 +73,13 @@ in {
       };
     };
     config.canivete = mkIf config.canivete.sops.enable {
-      devenv.modules = {
-        packages = [config.canivete.sops.package];
-        git-hooks.excludes = ["${directory}/.+"];
-        scripts.sops-setup.exec = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- \"$@\"";
-      };
+      devenv.modules = [
+        {
+          packages = [config.canivete.sops.package];
+          git-hooks.excludes = ["${directory}/.+"];
+          scripts.sops-setup.exec = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").sops.scripts.setup \"\${NIX_OPTIONS[@]}\" -- \"$@\"";
+        }
+      ];
     };
   };
 }
