@@ -37,6 +37,7 @@ in {
       overlays =
         attrValues inputs.self.overlays
         ++ toList (final: _: {
+          canivete = final.writeShellScriptBin "canivete" (builtins.readFile ./utils.sh);
           fromYAML = flip pipe [
             (file: "${final.yq}/bin/yq '.' ${file} > $out")
             (final.runCommand "from-yaml" {})

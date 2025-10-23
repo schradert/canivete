@@ -21,7 +21,7 @@ flake @ {inputs, ...}: {
         type = package;
         default = pkgs.writeShellApplication {
           name = "opentofu";
-          runtimeInputs = with pkgs; [git gum yq] ++ [pkgs.vals config.canivete.scripts.utils];
+          runtimeInputs = with pkgs; [git gum yq] ++ [pkgs.canivete pkgs.vals];
           text = readFile ./opentofu.sh;
         };
       };
