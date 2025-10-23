@@ -61,7 +61,7 @@ in {
       })
     ]))
     (mkIf (k8s == "rke2" && cfg.role == "server") {
-      canivete.kubernetes.k3s = {
+      canivete.kubernetes.yaml = {
         disable = ["rke2-coredns" "rke2-ingress-nginx" "rke2-metrics-server"];
         cni = "none";
       };
