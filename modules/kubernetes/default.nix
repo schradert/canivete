@@ -53,6 +53,7 @@ in {
           inherit (nixidy) envs libOverlay;
           modules = [nixidy.shared];
           extraSpecialArgs = nixidy.args // {inherit perSystem;};
+          charts = (inputs.nixhelm.chartsDerivations.${system} or {}) // nixidy.charts;
         };
       };
     })

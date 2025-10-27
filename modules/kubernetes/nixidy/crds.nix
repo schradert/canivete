@@ -23,7 +23,7 @@ in {
         attrNameOverrides = mkTypeOption (types.attrsOf str) {default = {};};
         crds = mkTypeOption (types.listOf str) {internal = true;};
 
-        install = mkEnableOption "install CRDs";
+        install = lib.mkEnableOption "install CRDs";
         application = mkTypeOption str {default = name;};
         prefix = mkTypeOption str {default = "";};
         match = mkTypeOption str {default = ".+";};
@@ -32,12 +32,12 @@ in {
     }));
   };
   config.applications = lib.pipe config.dotfiles.crds [
-    (builtins.filterAttrs (_: crd: crd.install))
-    (lib.mapAttrsToList (_: crd: {${crd.application}.yamls = builtins.map builtins.readFile crd.crds;}))
+    (lib.filterAttrs (_: crd: crd.install))
+    (lib.mapAttrsToList (_: crd: {${crd.application}.yamls = map builtins.readFile crd.crds;}))
     lib.mkMerge
   ];
   config.nixidy.applicationImports = lib.flip lib.mapAttrsToList config.dotfiles.crds (_: crd:
-    builtins.toString (perSystem.inputs'.nixidy.packages.generators.fromCRD {
+    toString (perSystem.inputs'.nixidy.packages.generators.fromCRD {
       inherit (crd) name src namePrefix crds attrNameOverrides;
     }));
 }
