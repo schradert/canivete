@@ -1,5 +1,5 @@
 {
-  canivete,
+  can,
   config,
   lib,
   pkgs,
@@ -7,17 +7,13 @@
 }: let
   getGVKN = o: builtins.concatStringsSep "/" [o.apiVersion o.kind o.metadata.name];
 in {
-  options.build.scripts.bootstrap = lib.mkOption {
-    type = lib.types.package;
-    internal = true;
-    description = "Command to bootstrap cluster";
-  };
+  options.build.scripts.bootstrap = can.package "command to bootstrap cluster" {internal = true;};
   config = {
     nixidy.applicationImports = [
       (_: {
         options.canivete.bootstrap = {
-          enable = lib.mkEnableOption "importing resources into cluster bootstrap";
-          exclude = canivete.mkArgsOption {};
+          enable = can.enable "importing resources into cluster bootstrap" {};
+          exclude = can.list.str "resources to exclude from bootstrap" {};
         };
       })
     ];

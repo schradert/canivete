@@ -1,58 +1,17 @@
-{
-  config,
-  lib,
-  ...
-}: let
-  inherit (config.canivete.meta) people domain;
-  inherit (lib) mkOption types;
-  inherit (types) submodule str attrsOf strMatching;
-  userSubmodule = submodule {
-    options.name = mkOption {
-      type = str;
-      description = "The name of the user to default to in all contexts";
-      example = "John Doe";
-    };
-    options.accounts = mkOption {
-      type = attrsOf str;
-      description = "Mapping of external program name to user account name on it";
-      example.github = "my-username";
-      default = {};
-    };
-    options.profiles = mkOption {
-      type = attrsOf (submodule {
-        options.email = mkOption {
-          type = str;
-          description = "The email to associate with the user in this profile";
-          example = "me@123.com";
-        };
-      });
-    };
-  };
-in {
+{can, ...}: {
   options.canivete.meta = {
-    domain = mkOption {
-      type = strMatching "^[a-z0-9\-]+\.[a-z]{2,}$";
-      description = "Base domain for exposing nodes and services";
-    };
-    people = mkOption {
-      type = submodule {
-        options.users = mkOption {
-          type = attrsOf userSubmodule;
-          description = "All of the users to create configurations for";
-        };
-        options.me = mkOption {
-          type = str;
-          description = ''
-            The name of the user that represents myself.
-            This will be the admin user in all contexts.
-          '';
-        };
-        options.my = mkOption {
-          type = userSubmodule;
-          description = "The user details associated with 'me'";
-          default = with people; users.${me};
+    domain = can.domain "base domain for exposing nodes and services" {};
+    people = can.submodule "people in the organization" ({config, ...}: {
+      options.users = can.attrs.submodule "all of the users to create configurations for" {
+        options.name = can.str "name of the user to default to in all contexts" {example = "John Doe";};
+        options.accounts = can.attrs.str "mapping of external program names to user account" {};
+        options.profiles = can.attrs.submodule "details on user profiles" {
+          options.email = can.email "user profile email" {};
+          options.sshPubKey = can.str "public key for connecting to nodes and services and accounts" {};
         };
       };
-    };
+      options.me = can.enum (builtins.attrNames config.users) "the super admin user in all contexts" {};
+      options.my = can.raw "user details associated with 'me'" {default = config.users.${config.me};};
+    });
   };
 }

@@ -1,4 +1,5 @@
 {
+  can,
   config,
   flake,
   lib,
@@ -15,20 +16,16 @@
   isRoot = node.name == root;
 in {
   options.canivete.kubernetes = {
-    enable = lib.mkEnableOption "kubernetes as a service";
-    yaml = lib.mkOption {
-      inherit (pkgs.formats.yaml {}) type;
-      description = "Settings for config.yaml";
-      default = {};
-    };
+    enable = can.enable "kubernetes as a service" {};
+    yaml = can.yaml.option pkgs "settings for config.yaml" {};
   };
-  config = mkIf kubernetes.enable (mkMerge [
+  config = lib.mkIf kubernetes.enable (lib.mkMerge [
     {
       canivete.kubernetes.yaml = {
         selinux = true;
         token-file = config.sops.secrets."passwords/k8s-token".path;
       };
-      environment.etc."rancher/${k8s}/config.yaml".source = pkgs.writers.writeYAML "${k8s}.yaml" kubernetes.yaml;
+      environment.etc."rancher/${k8s}/config.yaml".source = can.yaml.generate "${k8s}.yaml" kubernetes.yaml;
       environment.systemPackages = [pkgs.${k8s}];
       services.${k8s} = {
         enable = true;
@@ -37,7 +34,7 @@ in {
       sops.secrets."passwords/k8s-token" = {};
       virtualisation.containerd.enable = true;
     }
-    (mkIf (cfg.role == "server") {
+    (lib.mkIf (cfg.role == "server") {
       canivete.kubernetes.yaml = {
         disable-cloud-controller = true;
         disable-kube-proxy = true;
@@ -46,12 +43,12 @@ in {
         tls-san = [domain];
       };
     })
-    (mkIf isRoot {services.${k8s}.role = "server";})
-    (mkIf (!isRoot) {canivete.kubernetes.yaml.server = "https://${domain}:6443";})
-    (mkIf (k8s == "k3s") (mkMerge [
+    (lib.mkIf isRoot {services.${k8s}.role = "server";})
+    (lib.mkIf (!isRoot) {canivete.kubernetes.yaml.server = "https://${domain}:6443";})
+    (lib.mkIf (k8s == "k3s") (lib.mkMerge [
       {services.k3s.gracefulNodeShutdown.enable = true;}
-      (mkIf isRoot {services.k3s.clusterInit = true;})
-      (mkIf (cfg.role == "server") {
+      (lib.mkIf isRoot {services.k3s.clusterInit = true;})
+      (lib.mkIf (cfg.role == "server") {
         canivete.kubernetes.yaml = {
           disable = ["traefik" "servicelb" "local-storage" "metrics-server" "coredns"];
           disable-network-policy = true;
@@ -60,7 +57,7 @@ in {
         };
       })
     ]))
-    (mkIf (k8s == "rke2" && cfg.role == "server") {
+    (lib.mkIf (k8s == "rke2" && cfg.role == "server") {
       canivete.kubernetes.yaml = {
         disable = ["rke2-coredns" "rke2-ingress-nginx" "rke2-metrics-server"];
         cni = "none";

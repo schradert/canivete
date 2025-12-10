@@ -1,4 +1,5 @@
 {
+  can,
   config,
   inputs,
   lib,
@@ -8,14 +9,14 @@
     ./deploy
     ./kubernetes
     ./opentofu
+    ./pkgs
     ./sops
 
-    ./canivete.nix
     ./devenv.nix
     ./meta.nix
-    ./pkgs.nix
   ];
   systems = lib.mkDefault (import inputs.systems);
+  perSystem._module.args = {inherit can;};
 
   # Expose everything canivete to flake top level
   flake.canivete = lib.mergeAttrsList [

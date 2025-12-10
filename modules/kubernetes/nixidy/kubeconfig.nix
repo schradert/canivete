@@ -1,17 +1,13 @@
 {
+  can,
   flake,
-  lib,
   nixidy,
   pkgs,
   ...
 }: let
-  inherit (flake.coinfig.canivete.meta) root;
+  inherit (flake.config.canivete.meta) root;
 in {
-  options.build.scripts.kubeconfig = lib.mkOption {
-    type = lib.types.package;
-    internal = true;
-    description = "Command to connect cluster";
-  };
+  options.build.scripts.kubeconfig = can.package "command to connect cluster" {internal = true;};
   config.build.scripts.kubeconfig = pkgs.mkShellApplication {
     name = "kubeconfig";
     runtimeInputs = with pkgs; [openssh tinybox];

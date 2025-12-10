@@ -1,4 +1,8 @@
-{inputs, ...}: {
+{
+  can,
+  inputs,
+  ...
+}: {
   imports = [(inputs.devenv.flakeModule or {})];
   perSystem = {lib, ...}: {
     imports = lib.optional (inputs ? devenv) (lib.mkAliasOptionModule ["canivete" "devenv"] ["devenv"]);
@@ -9,8 +13,8 @@
         ...
       }: let
         inherit (config) languages;
-        toml = pkgs.formats.toml {};
       in {
+        _module.args = {inherit can;};
         git-hooks.default_stages = lib.mkDefault ["pre-push" "manual"];
         git-hooks.excludes = [".canivete"];
         git-hooks.hooks = lib.mkMerge [
@@ -35,13 +39,9 @@
             gitleaks.enable = true;
             gitleaks.entry = "${pkgs.gitleaks}/bin/gitleaks protect --redact";
             lychee = {config, ...}: {
-              options.toml = lib.mkOption {
-                inherit (toml) type;
-                default = {};
-                description = "Contents of lychee.toml";
-              };
+              options.toml = can.toml.option pkgs "Contents of lychee.toml" {};
               config.enable = true;
-              config.settings.configPath = toString (toml.generate "lychee.toml" config.toml);
+              config.settings.configPath = toString (can.toml.generate pkgs "lychee.toml" config.toml);
             };
             markdownlint.enable = true;
             markdownlint.settings.configuration.MD013.line_length = -1;
@@ -53,14 +53,10 @@
             alejandra.enable = true;
             deadnix.enable = true;
             statix = {config, ...}: {
-              options.toml = lib.mkOption {
-                inherit (toml) type;
-                default = {};
-                description = "Contents of statix.toml";
-              };
+              options.toml = can.toml.option pkgs "Contents of statix.toml" {};
               config.enable = true;
               config.toml.disabled = lib.mkDefault ["unquoted_uri" "repeated_keys"];
-              config.raw.args = ["--config" (toml.generate "statix.toml" config.toml)];
+              config.raw.args = ["--config" (can.toml.generate pkgs "statix.toml" config.toml)];
             };
           }
           (lib.mkIf languages.python.enable {

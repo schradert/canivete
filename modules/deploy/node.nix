@@ -1,46 +1,27 @@
-flake @ {
-  canivete,
+node @ {
+  can,
+  flake,
+  config,
   lib,
+  name,
   ...
 }: let
-  inherit (canivete) mkNullableOption mkSystemOption;
-  inherit (lib) attrNames mkOption types;
-  inherit (types) attrsOf enum listOf str submodule;
-in
-  node @ {
-    config,
-    name,
-    ...
-  }: {
-    imports = [(import ./generic.nix flake)];
-    options = {
-      hostname = mkOption {
-        type = str;
-        default = name;
-        description = "Server hostname";
-      };
-      profiles = mkOption {
-        type = attrsOf (submodule {
-          imports = [(import ./profile.nix flake)];
-          _module.args = {inherit node;};
-        });
-        default = {};
-        description = "All possible profiles to deploy on node";
-      };
-      profilesOrder = mkNullableOption (listOf (enum (attrNames config.profiles))) {description = "First profiles to deploy";};
-      canivete.os = mkOption {
-        type = enum ["nixos" "macos" "windows" "linux" "android"];
-        default = "nixos";
-        description = "Node operating system";
-      };
-      canivete.system = mkSystemOption {
-        default =
-          {
-            macos = "aarch64-darwin";
-            android = "aarch64-linux";
-          }
-          .${config.canivete.os}
-          or "x86_64-linux";
-      };
+  perSystem = flake.withSystem config.canivete.system lib.id;
+in {
+  imports = [./generic.nix];
+  options = {
+    hostname = can.str "server hostname" {default = name;};
+    profiles = can.attrs.submoduleWith "all possible profiles to deploy on node" {inherit flake node perSystem;} ./profile.nix;
+    profilesOrder = can.opt.list.enum (builtins.attrNames config.profiles) "first profiles to deploy" {};
+    canivete.os = can.enum ["nixos" "macos" "windows" "linux" "android"] "node operating system" {default = "nixos";};
+    canivete.system = can.str "node architecture" {
+      default =
+        {
+          macos = "aarch64-darwin";
+          android = "aarch64-linux";
+        }
+        .${config.canivete.os}
+        or "x86_64-linux";
     };
-  }
+  };
+}

@@ -12,11 +12,23 @@
     # Development
     devenv.url = "github:cachix/devenv";
   };
-  outputs = inputs:
-    inputs.flake-parts.lib.mkFlake {inherit inputs;} ({canivete, ...}: {
+  outputs = inputs: let
+    specialArgs.can = import ./lib.nix inputs.nixpkgs.lib;
+  in
+    inputs.flake-parts.lib.mkFlake {inherit inputs specialArgs;} ({
+      can,
+      lib,
+      ...
+    }: {
       imports = [./modules];
-      flake.lib = canivete;
-      flake.templates.default.path = ./template;
+      flake = {
+        inherit can;
+        templates.default.path = ./template;
+        lib.mkFlake = args: everything: module:
+          inputs.flake-parts.lib.mkFlake {inputs = inputs // args.inputs;} {
+            imports = lib.concat [module ./modules] (can.filesets.nix.everything everything);
+          };
+      };
       perSystem.canivete.devenv.shells.default.languages.shell.enable = true;
     });
 }

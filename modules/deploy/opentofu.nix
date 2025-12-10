@@ -1,30 +1,33 @@
 {
-  canivete,
+  can,
   config,
   lib,
   ...
-}: let
-  inherit (config.canivete.deploy) nodes;
-in {
-  canivete.deploy = {config, ...}: let
-    inherit (config.canivete) flakes;
-  in {
-    options.nodes = canivete.mkNestedSubmodule {
-      options.profiles = canivete.mkNestedSubmodule ({
+}: {
+  perSystem.canivete.opentofu.workspaces.deploy = {
+    plugins = ["hashicorp/null" "hashicorp/external"];
+    modules.imports = let
+      getProfileImport = lib.getAttrFromPath ["canivete" "configuration" "config" "canivete" "opentofu"];
+      getNodeImports = node: map getProfileImport (builtins.attrValues node.profiles);
+    in
+      lib.pipe config.canivete.deploy.nodes [builtins.attrValues (builtins.concatMap getNodeImports)];
+  };
+  canivete.deploy = _: {
+    options.nodes = can.attrs.withSubmodule {
+      options.profiles = can.attrs.withSubmodule ({
         config,
+        flake,
         name,
         node,
         ...
       }: let
+        inherit (flake.config.canivete) flakes;
         inherit (config.canivete) type;
         resource_name = "${type}_${node.name}_${name}";
-        nixFlags =
-          if type == "droid"
-          then "--impure"
-          else "";
+        nixFlags = can.ifElse (type == "droid") "--impure" "";
       in {
         canivete.configuration = {
-          options.canivete.opentofu = canivete.mkModuleOption {};
+          options.canivete.opentofu = can.module "OpenTofu modules for profile" {};
           config.canivete.opentofu = {
             config,
             pkgs,
@@ -57,18 +60,6 @@ in {
           };
         };
       });
-    };
-  };
-  perSystem = {config, ...}: {
-    config = lib.mkIf config.canivete.opentofu.enable {
-      canivete.opentofu.workspaces.deploy = {
-        plugins = ["hashicorp/null" "hashicorp/external"];
-        modules.imports = let
-          getProfileImport = lib.getAttrFromPath ["canivete" "configuration" "config" "canivete" "opentofu"];
-          getNodeImports = node: map getProfileImport (builtins.attrValues node.profiles);
-        in
-          lib.pipe nodes [builtins.attrValues (builtins.concatMap getNodeImports)];
-      };
     };
   };
 }

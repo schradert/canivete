@@ -1,35 +1,23 @@
-flake @ {
-  canivete,
+profile @ {
+  can,
+  flake,
   config,
-  lib,
-  withSystem,
+  node,
+  perSystem,
   ...
 }: let
-  inherit (canivete) mkNullableOption;
-  inherit (config.canivete.deploy.canivete) flakes modules;
-  inherit (lib) evalModules getExe mkDefault mkOption optionalAttrs types;
-  inherit (types) deferredModule enum functionTo package path pathInStore raw;
-in
-  profile @ {
-    config,
-    name,
-    node,
-    ...
-  }: let
-    inherit (config.canivete) activator builder configuration type;
-    inherit (flakes.deploy.lib.${node.config.canivete.system}) activate;
-    inherit (node.config.canivete) os system;
-  in {
-    imports = [(import ./generic.nix flake)];
-    options.path = mkOption {
-      type = pathInStore;
-      default = activator configuration;
-      description = "Path to activation script for given derivation";
-    };
-    options.profilePath = mkNullableOption path {description = "Profile installation path";};
-    options.canivete = {
-      type = mkOption {
-        type = enum ["home-manager" "nixos" "darwin" "droid" "custom"];
+  inherit (config.canivete) activator args builder configuration type;
+  inherit (node.config.canivete) os system;
+  inherit (flake.config.canivete.deploy.canivete) flakes modules;
+  inherit (flakes.deploy.lib.${system}) activate;
+in {
+  imports = [./generic.nix];
+  options = {
+    path = can.pathInStore "path to activation script for given derivation" {default = activator configuration;};
+    profilePath = can.opt.path "profile installation path" {};
+    canivete = {
+      configuration = can.module "central module and configuration derviation for profile" {apply = builder;};
+      type = can.enum ["home-manager" "nixos" "darwin" "droid" "custom"] "config module class" {
         default =
           {
             nixos = "nixos";
@@ -39,68 +27,67 @@ in
             android = "droid";
           }
           .${os};
-        description = "Configuration module class (type of derivation)";
       };
-      activator = mkOption {
-        type = functionTo pathInStore;
+      activator = can.function.pathInStore "how to build activation script from derivation" {
         default =
           {
             inherit (activate) nixos darwin home-manager;
             droid = base: (activate.custom // {dryActivate = "$PROFILE/activate switch --dry-run";}) base.activationPackage "$PROFILE/activate switch";
-            custom = base: activate.custom base.canivete.activationPackage (getExe base.canivete.activationPackage);
+            custom = base: activate.custom base.canivete.activationPackage (lib.getExe base.canivete.activationPackage);
           }
           .${type};
-        description = "How to build activation script for a derivation";
       };
-      builder = mkOption {
-        type = functionTo raw;
+      args = can.attrs.anything "arguments based to configuration" {};
+      builder = can.function.raw "convert modules to configurations" {
         default =
           {
-            nixos = modules: flakes.nixos.lib.nixosSystem {modules = [modules];};
-            darwin = modules: flakes.darwin.lib.darwinSystem {modules = [modules];};
+            nixos = modules:
+              flakes.nixos.lib.nixosSystem {
+                specialArgs = args;
+                modules = [modules];
+              };
+            darwin = modules:
+              flakes.darwin.lib.darwinSystem {
+                specialArgs = args;
+                modules = [modules];
+              };
             droid = modules:
-              withSystem system ({pkgs, ...}:
+              flake.withSystem system ({pkgs, ...}:
                 flakes.droid.lib.nixOnDroidConfiguration {
                   inherit pkgs;
+                  extraSpecialArgs = args;
                   modules = [modules];
                 });
             home-manager = modules:
-              withSystem system ({pkgs, ...}:
+              flake.withSystem system ({pkgs, ...}:
                 flakes.home-manager.lib.homeManagerConfiguration {
                   inherit pkgs;
+                  extraSpecialArgs = args;
                   modules = [modules];
                 });
-            custom = modules: evalModules {modules = [modules];};
+            custom = modules:
+              lib.evalModules {
+                specialArgs = args;
+                modules = [modules];
+              };
           }
           .${type};
-        description = "Convert modules to configurations";
-      };
-      configuration = mkOption {
-        type = deferredModule;
-        default = {};
-        description = "Central module and configuration derivation for profile";
-        apply = builder;
       };
     };
-    config = {
-      user = mkDefault ({
-          home-manager = name;
-          nixos = "root";
-        }
-        .${type}
-        or null);
-      canivete.configuration.imports = [
-        (withSystem system (perSystem: {_module.args = {inherit canivete flake node perSystem profile;};}))
-        (modules.${type}
-          or {
-            options.canivete.activationPackage = mkOption {
-              type = package;
-              description = "Final package for custom profile";
-            };
-          })
-        (optionalAttrs (type == "home-manager") {home.username = name;})
-        # TODO when should I replace this with nixos-facter, etc.?
-        (optionalAttrs (type != "custom") {nixpkgs.hostPlatform = system;})
-      ];
-    };
-  }
+  };
+  config = {
+    user = let
+      users = {
+        home-manager = name;
+        nixos = "root";
+      };
+    in
+      lib.mkDefault (users.${type} or null);
+    canivete.args = {inherit can flake node perSystem profile;};
+    canivete.configuration =
+      modules.${type}
+      or {
+        options.canivete.activationPackage = can.package "final package for custom profile" {};
+      };
+  };
+}

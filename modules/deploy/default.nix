@@ -1,5 +1,5 @@
 flake @ {
-  canivete,
+  can,
   config,
   inputs,
   lib,
@@ -7,48 +7,46 @@ flake @ {
   withSystem,
   ...
 }: let
-  inherit (canivete) mkFlakeOption mkModuleOption;
   inherit (config.canivete.meta) people;
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
-  inherit (lib) filterAttrsRecursive flip mapAttrs mkIf mkMerge mkOption optional types;
-  inherit (types) attrsOf submodule;
 in {
   imports = [./opentofu.nix];
-  options.canivete.deploy = mkOption {
-    type = submodule {
-      imports = [(import ./generic.nix flake)];
-      options.nodes = mkOption {
-        type = attrsOf (submodule (import ./node.nix flake));
-        default = {};
-        description = "Nodes to deploy profiles to";
+  options.canivete.deploy = can.submodule "deploy-rs with a twist" {
+    imports = [./generic.nix];
+    options = {
+      nodes = can.attrs.submoduleWith "nodes to deploy profiles to" {inherit flake;} ./node.nix;
+      canivete.flakes = {
+        deploy = can.flake inputs "deploy-rs" {};
+        nixos = can.flake inputs "nixpkgs" {};
+        darwin = can.flake inputs "nix-darwin" {};
+        droid = can.flake inputs "nix-on-droid" {};
+        home-manager = can.flake inputs "home-manager" {};
+        anywhere = can.flake inputs "nixos-anywhere" {};
+        disko = can.flake inputs "disko" {};
       };
-      options.canivete = {
-        flakes = {
-          deploy = mkFlakeOption "deploy-rs" {};
-          nixos = mkFlakeOption "nixpkgs" {};
-          darwin = mkFlakeOption "nix-darwin" {};
-          droid = mkFlakeOption "nix-on-droid" {};
-          home-manager = mkFlakeOption "home-manager" {};
-          anywhere = mkFlakeOption "nixos-anywhere" {};
-          disko = mkFlakeOption "disko" {};
-        };
-        modules = {
-          home-manager = mkModuleOption {};
-          nixos = mkModuleOption {};
-          darwin = mkModuleOption {};
-          droid = mkModuleOption {};
-          system = mkModuleOption {};
-          shared = mkModuleOption {};
-        };
+      canivete.modules = {
+        home-manager = can.module "home-manager modules" {};
+        nixos = can.module "nixos modules" {};
+        darwin = can.module "nix-darwin modules" {};
+        droid = can.module "nix-on-droid modules" {};
+        system = can.module "shared modules for system deployment (i.e. nixos, darwin, droid)" {};
+        shared = can.module "shared modules for all deployments (including home-manager)" {};
       };
-      config.canivete.modules = let
+    };
+    config = {
+      canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
-        system = mkMerge [
+        # TODO when should I replace this with nixos-facter, etc.?
+        shared = {node, ...}: {nixpkgs.hostPlatform = node.config.canivete.system;};
+        home-manager = {profile, ...}: {
+          imports = [modules.shared];
+          home.username = profile.config.name;
+        };
+        system = lib.mkMerge [
           modules.shared
-          # TODO can I do this for other systems too?
-          (mkIf (flakes.home-manager != null) (systemConfiguration @ {
+          (lib.mkIf (flakes.home-manager != null) (systemConfiguration @ {
             node,
             perSystem,
             # deadnix: skip
@@ -56,65 +54,64 @@ in {
             profile,
             ...
           }: {
-            home-manager.extraSpecialArgs = {inherit canivete flake node perSystem profile systemConfiguration;};
-            home-manager.users = mapAttrs (username: _: {home = {inherit username;};}) people.users;
+            home-manager.extraSpecialArgs = {inherit can flake node perSystem profile systemConfiguration;};
             home-manager.sharedModules = [modules.home-manager];
+            home-manager.users = builtins.mapAttrs (username: _: {home = {inherit username;};}) people.users;
           }))
         ];
-        home-manager.imports = [modules.shared];
-        nixos = mkMerge [
+        nixos = lib.mkMerge [
           {
-            imports = [
-              hostnameModule
-              modules.system
-            ];
-            users.users = flip mapAttrs people.users (username: person: {
+            imports = [hostnameModule modules.system];
+            users.users = lib.flip builtins.mapAttrs people.users (username: person: {
               isNormalUser = true;
               home = "/home/${username}";
               description = person.name;
-              extraGroups = ["tty"] ++ (optional (username == people.me) "wheel");
+              extraGroups = ["tty"] ++ (lib.optional (username == people.me) "wheel");
             });
           }
-          (mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
-          # TODO can I do this for other systems too?
-          (mkIf (flakes.home-manager != null) ({utils, ...}: {
+          (lib.mkIf (flakes.disko != null) flakes.disko.nixosModules.default)
+          (lib.mkIf (flakes.home-manager != null) ({utils, ...}: {
             imports = [flakes.home-manager.nixosModules.home-manager];
             home-manager.extraSpecialArgs = {inherit utils;};
           }))
         ];
-        droid.imports = [modules.system];
-        darwin = mkMerge [
-          hostnameModule
-          modules.system
-          (mkIf (flakes.home-manager != null) flakes.home-manager.darwinModules.home-manager)
+        droid = modules.system;
+        darwin = lib.mkMerge [
+          {
+            imports = [hostnameModule modules.system];
+            users.users = lib.flip builtins.mapAttrs people.users (username: person: {
+              home = "/Users/${username}";
+              description = person.name;
+            });
+          }
+          (lib.mkIf (flakes.home-manager != null) flakes.home-manager.darwinModules.home-manager)
         ];
       };
     };
-    default = {};
-    description = "Deployment with deploy-rs and nixos-anywhere";
   };
   config = let
     typeNodes = type: let
       inherit (lib) attrValues filterAttrs getAttrFromPath head length mapAttrs pipe;
-      typeProfiles = funcs: node: pipe node.profiles ([(filterAttrs (_: profile: profile.canivete.type == type)) attrValues] ++ funcs);
+      isType = builtins.filterAttrs (_: profile: profile.canivete.type == type);
+      typeProfiles = funcs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funcs);
     in
-      pipe nodes [
+      lib.pipe nodes [
         # TODO what happens if there are multiple "system"-type configurations?!
-        (filterAttrs (_: typeProfiles [length (l: l == 1)]))
-        (mapAttrs (_: typeProfiles [head (getAttrFromPath ["canivete" "configuration"])]))
+        (builtins.filterAttrs (_: typeProfiles [builtins.length (l: l == 1)]))
+        (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.getAttrFromPath ["canivete" "configuration"])]))
       ];
     nixosConfigurations = typeNodes "nixos";
     darwinConfigurations = typeNodes "darwin";
     nixOnDroidConfigurations = typeNodes "droid";
     homeManagerConfigurations = typeNodes "home-manager";
   in
-    mkIf (nodes != {}) {
-      flake = mkMerge [
-        {deploy = filterAttrsRecursive (name: value: name != "canivete" && value != null) config.canivete.deploy;}
-        (mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
-        (mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
-        (mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
-        (mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
+    lib.mkIf (nodes != {}) {
+      flake = lib.mkMerge [
+        {deploy = lib.filterAttrsRecursive (name: value: name != "canivete" && value != null) config.canivete.deploy;}
+        (lib.mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
+        (lib.mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
+        (lib.mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
+        (lib.mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
       ];
       perSystem = {system, ...}: {
         checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;

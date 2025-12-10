@@ -1,37 +1,28 @@
 flake @ {
-  canivete,
+  can,
   config,
   inputs,
   lib,
   ...
 }: let
   inherit (config.canivete) nixidy;
-  inherit (lib) types;
 in {
-  options.canivete.nixidy = lib.mkOption {
-    default = {};
-    type = types.submodule (nixidy: {
-      options = {
-        enable = lib.mkEnableOption "Nixidy" // {default = inputs ? nixidy;};
-        shared = canivete.mkModuleOption {};
-        args = canivete.mkAttrsOption types.anything {};
-        envs = canivete.mkModulesOption {};
-        charts = canivete.mkAttrsOption types.anything {};
-        # TODO convert to multiple overlays
-        libOverlay = canivete.mkNullableOption (with types; functionTo (functionTo (attrsOf anything))) {};
-        k8s = lib.mkOption {
-          default = "k3s";
-          description = "Kubernetes distribution";
-          type = types.enum ["k3s" "rke2"];
-        };
-      };
-      config = {
-        args = {inherit canivete flake nixidy;};
-        shared = ./nixidy;
-        envs.prod = {};
-      };
-    });
-  };
+  options.canivete.nixidy = can.submodule "nixidy" (nixidy: {
+    options = {
+      enable = can.enable "nixidy" {default = inputs ? nixidy;};
+      shared = can.module "shared modules" {};
+      args = can.attrs.anything "nixidy args" {};
+      envs = can.attrs.module "environment configs" {};
+      charts = can.attrs.anything "nixidy charts" {};
+      libOverlay = can.overlay "extra lib functions" {};
+      k8s = can.enum ["k3s" "rke2"] "kubernetes distribution" {};
+    };
+    config = {
+      args = {inherit can flake nixidy;};
+      shared = ./nixidy;
+      envs.prod = {};
+    };
+  });
   config = lib.mkMerge [
     {canivete.deploy.canivete.modules.nixos = ./nixos.nix;}
     {perSystem.canivete.opentofu.workspaces.deploy = ./opentofu.nix;}

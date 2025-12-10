@@ -1,153 +1,120 @@
 # Adapted from https://gist.github.com/bcd2b4e0d3a30abbdec19573083b34b7.git
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
+# TODO try out the flake module!
 flake @ {inputs, ...}: {
-  # TODO try out the flake module!
   perSystem = perSystem @ {
-    canivete,
+    can,
     config,
     lib,
     pkgs,
     ...
   }: let
-    inherit (canivete) vals ifElse mkEnabledOption;
     inherit (config.canivete) opentofu;
-    inherit (lib) mkOption mkEnableOption mkMerge nameValuePair mkIf listToAttrs types mkDefault strings readFile;
-    inherit (types) attrsOf package str deferredModule submodule;
   in {
+    config = lib.mkIf opentofu.enable {
+      canivete.devenv.shells.default.scripts.tofu.exec = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- \"$@\"";
+    };
     options.canivete.opentofu = {
-      enable = mkEnableOption "OpenTofu workspaces" // {default = inputs ? terranix;};
-      script = mkOption {
-        type = package;
+      enable = can.enable "opentofu workspaces" {default = inputs ? terranix;};
+      directory = can.str "path relative to project root to store opentofu state" {default = ".canivete/opentofu";};
+      script = can.package "activation script" {
         default = pkgs.writeShellApplication {
           name = "opentofu";
           runtimeInputs = with pkgs; [git gum yq] ++ [pkgs.canivete pkgs.vals];
-          text = readFile ./opentofu.sh;
+          text = builtins.readFile ./opentofu.sh;
         };
       };
-      sharedModules = mkOption {
-        type = deferredModule;
-        default = {};
-        description = "";
-      };
-      workspaces = mkOption {
-        default = {};
-        description = "OpenTofu workspaces!";
-        type = attrsOf (submodule (workspace @ {
-          config,
-          # deadnix: skip
-          name,
-          ...
-        }: {
-          options = {
-            encryptedState.enable = mkEnabledOption "encrypted state (alpha prerelease)";
-            encryptedState.passphrase = mkOption {
-              type = str;
-              default = vals.sops.default "opentofu_pw";
-              description = "Value or vals-like reference (i.e. ref+sops://... or with nix.vals.sops) to secret to decrypt state";
-            };
-            plugins = mkOption {
-              default = [];
-              description = "Providers to pull";
-              example = ["hashicorp/google/1.0.0" "hashicorp/random"];
-              type = let
-                inherit (lib) elemAt substring importJSON length head filter;
-                inherit (types) listOf coercedTo;
-                inherit (pkgs.go) GOARCH GOOS;
-                strToPackage = provider: let
-                  # Parse source (e.g. "owner/repo[/versionTry]")
-                  providerParts = strings.splitString "/" provider;
-                  owner = elemAt providerParts 0;
-                  repo = elemAt providerParts 1;
-                  source = "${owner}/${repo}";
-
-                  # Target system version (latest by default)
-                  version = let
-                    upstreamOwner =
-                      if owner == "hashicorp"
-                      then "opentofu"
-                      else owner;
-                    file = inputs.opentofu-registry + "/providers/${substring 0 1 upstreamOwner}/${upstreamOwner}/${repo}.json";
-                    inherit (importJSON file) versions;
-                    hasSpecificVersion = (length providerParts) == 3;
-                    specificVersion = head (filter (v: v.version == elemAt providerParts 2) versions);
-                    latestVersion = head versions;
-                  in
-                    ifElse hasSpecificVersion specificVersion latestVersion;
-                  target = head (filter (t: t.arch == GOARCH && t.os == GOOS) version.targets);
-                in
-                  pkgs.stdenv.mkDerivation {
-                    inherit (version) version;
-                    pname = "terraform-provider-${repo}";
-                    src = pkgs.fetchurl {
-                      url = target.download_url;
-                      sha256 = target.shasum;
-                    };
-                    unpackPhase = "unzip -o $src";
-                    nativeBuildInputs = [pkgs.unzip];
-                    buildPhase = ":";
-                    # The upstream terraform wrapper assumes the provider filename here
-                    installPhase = ''
-                      dir=$out/libexec/terraform-providers/registry.opentofu.org/${source}/${version.version}/${GOOS}_${GOARCH}
-                      mkdir -p "$dir"
-                      mv terraform-* "$dir/"
-                    '';
-                    passthru = {inherit repo source;};
-                  };
-              in
-                listOf (coercedTo str strToPackage package);
-            };
-            package = mkOption {
-              type = package;
-              default = pkgs.opentofu.withPlugins (_: config.plugins);
-              description = "Final package with plugins";
-            };
-            json = mkOption {
-              type = package;
-              default = (pkgs.formats.json {}).generate "config.tf.json" config.modules.config;
-              description = "OpenTofu configuration file for workspace";
-            };
-            modules = mkOption {
-              type = deferredModule;
-              default = {};
-              description = "Workspace modules to configuration";
-              apply = modules:
-                inputs.terranix.lib.terranixConfigurationAst {
-                  inherit pkgs;
-                  extraArgs = {inherit workspace canivete flake perSystem;};
-                  modules = [opentofu.sharedModules modules];
-                };
-            };
+      sharedModules = can.module "shared opentofu modules" {};
+      workspaces = can.attrs.submodule "opentofu workspaces" (workspace @ {config, ...}: {
+        options = {
+          encryptedState.enable = can.enable "encrypted state (alpha prerelease)" {};
+          encryptedState.passphrase = can.str "vals reference to decrypt state" {default = can.vals.sops.default "opentofu_pw";};
+          package = can.package "final package with plugins" {default = pkgs.opentofu.withPlugins (_: config.plugins);};
+          json = can.package "opentofu configuration file for workspace" {
+            default = (pkgs.formats.json {}).generate "config.tf.json" config.modules.config;
           };
-        }));
-      };
-    };
-    config = mkIf opentofu.enable {
-      canivete.devenv.shells.default.scripts.tofu.exec = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- \"$@\"";
-      canivete.opentofu.sharedModules = {workspace, ...}: let
-        inherit (workspace.config) encryptedState plugins;
-      in {
-        variable.GIT_DIR.type = "string";
-        terraform = mkMerge [
-          {
-            # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
-            required_providers = let
-              pluginToProvider = pkg: nameValuePair pkg.repo {inherit (pkg) source version;};
+          modules = can.module "workspace modules to configuration" {
+            apply = modules:
+              inputs.terranix.lib.terranixConfigurationAst {
+                inherit pkgs;
+                extraArgs = {inherit workspace can flake perSystem;};
+                modules = [opentofu.sharedModules modules];
+              };
+          };
+          plugins = lib.mkOption {
+            default = [];
+            description = "Providers to pull";
+            example = ["hashicorp/google/1.0.0" "hashicorp/random"];
+            type = let
+              inherit (pkgs) go;
+              strToPackage = provider: let
+                # Parse source (e.g. "owner/repo[/versionTry]")
+                providerParts = lib.splitString "/" provider;
+                owner = lib.elemAt providerParts 0;
+                repo = lib.elemAt providerParts 1;
+                source = "${owner}/${repo}";
+
+                # Target system version (latest by default)
+                version = let
+                  upstreamOwner =
+                    if owner == "hashicorp"
+                    then "opentofu"
+                    else owner;
+                  file = inputs.opentofu-registry + "/providers/${builtins.substring 0 1 upstreamOwner}/${upstreamOwner}/${repo}.json";
+                  inherit (lib.importJSON file) versions;
+                  hasSpecificVersion = (builtins.length providerParts) == 3;
+                  specificVersion = builtins.head (builtins.filter (v: v.version == lib.elemAt providerParts 2) versions);
+                  latestVersion = builtins.head versions;
+                in
+                  can.ifElse hasSpecificVersion specificVersion latestVersion;
+                target = builtins.head (builtins.filter (t: t.arch == go.GOARCH && t.os == go.GOOS) version.targets);
+              in
+                pkgs.stdenv.mkDerivation {
+                  inherit (version) version;
+                  pname = "terraform-provider-${repo}";
+                  src = pkgs.fetchurl {
+                    url = target.download_url;
+                    sha256 = target.shasum;
+                  };
+                  unpackPhase = "unzip -o $src";
+                  nativeBuildInputs = [pkgs.unzip];
+                  buildPhase = ":";
+                  # The upstream terraform wrapper assumes the provider filename here
+                  installPhase = ''
+                    dir=$out/libexec/terraform-providers/registry.opentofu.org/${source}/${version.version}/${go.GOOS}_${go.GOARCH}
+                    mkdir -p "$dir"
+                    mv terraform-* "$dir/"
+                  '';
+                  passthru = {inherit repo source;};
+                };
             in
-              listToAttrs (map pluginToProvider plugins);
-          }
-          (mkIf encryptedState.enable {
-            encryption = {
-              key_provider.pbkdf2.default.passphrase = mkDefault encryptedState.passphrase;
-              method.aes_gcm.default.keys = "\${ key_provider.pbkdf2.default }";
-              state.method = mkDefault "\${ method.aes_gcm.default }";
-              state.fallback = mkDefault {method = "\${ method.aes_gcm.default }";};
-              plan.method = mkDefault "\${ method.aes_gcm.default }";
-              plan.fallback = mkDefault {method = "\${ method.aes_gcm.default }";};
-            };
-          })
-        ];
-      };
+              with lib.types; listOf (coercedTo str strToPackage package);
+          };
+        };
+        config.modules = {
+          variable.GIT_DIR.type = "string";
+          terraform = lib.mkMerge [
+            {
+              # required_providers here prevents opentofu from defaulting to fetching builtin hashicorp/<plugin-name>
+              required_providers = lib.pipe config.plugins [
+                (map (pkg: lib.nameValuePair pkg.repo {inherit (pkg) source version;}))
+                builtins.listToAttrs
+              ];
+            }
+            (lib.mkIf config.encryptedState.enable {
+              encryption = {
+                key_provider.pbkdf2.default.passphrase = lib.mkDefault config.encryptedState.passphrase;
+                method.aes_gcm.default.keys = "\${ key_provider.pbkdf2.default }";
+                state.method = lib.mkDefault "\${ method.aes_gcm.default }";
+                state.fallback = lib.mkDefault {method = "\${ method.aes_gcm.default }";};
+                plan.method = lib.mkDefault "\${ method.aes_gcm.default }";
+                plan.fallback = lib.mkDefault {method = "\${ method.aes_gcm.default }";};
+              };
+            })
+          ];
+        };
+      });
     };
   };
 }

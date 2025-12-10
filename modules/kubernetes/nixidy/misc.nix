@@ -1,14 +1,11 @@
 {
+  can,
   config,
   lib,
   perSystem,
   ...
 }: {
-  options.build.scripts.nixidy = lib.mkOption {
-    type = lib.types.package;
-    internal = true;
-    description = "Nixidy executable";
-  };
+  options.build.scripts.nixidy = can.package "nixidy executable" {internal = true;};
   config.build.scripts.nixidy = perSystem.inputs'.nixidy.packages.default;
   config.nixidy.target.rootPath = "./generated/nixidy/${config.nixidy.env}";
   config.nixidy.defaults.helm.transformer = builtins.map (lib.kube.removeLabels [
