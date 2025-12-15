@@ -67,9 +67,9 @@
             name-tests-test.enable = true;
             python-debug-statements.enable = true;
 
-            flake8.enable = true;
             mypy.enable = true;
             ruff.enable = true;
+            ruff-format.enable = true;
             taplo.enable = true;
           })
           (lib.mkIf languages.rust.enable {
