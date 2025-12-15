@@ -24,11 +24,13 @@
       flake = {
         inherit can;
         templates.default.path = ./template;
-        lib.mkFlake = args: everything: module: let
-          _args = args // {
-            inputs = inputs // args.inputs;
-            specialArgs = specialArgs // (args.specialArgs or {});
-          };
+        lib.mkFlake = args: module: let
+          _args =
+            args
+            // {
+              inputs = inputs // args.inputs;
+              specialArgs = specialArgs // (args.specialArgs or {});
+            };
           modules = lib.concat [module ./modules] (can.filesets.nix.everything (args.everything or []));
         in
           inputs.flake-parts.lib.mkFlake _args {imports = modules;};
