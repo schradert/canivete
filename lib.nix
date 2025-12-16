@@ -188,12 +188,14 @@ lib: let
   attrs = wrapped types.attrsOf {inherit attrs function list opt;};
   list = wrapped types.listOf {inherit attrs function list opt;};
   function = wrapped types.functionTo {inherit attrs function list opt;};
-  options = (wrapped lib.id {} {}) // {
-    attrs = attrs {default = {};};
-    function = function {};
-    list = list {default = [];};
-    opt = opt {default = null;};
-  };
+  options =
+    (wrapped lib.id {} {})
+    // {
+      attrs = attrs {default = {};};
+      function = function {};
+      list = list {default = [];};
+      opt = opt {default = null;};
+    };
 
   can = lib.mergeAttrsList [
     options
