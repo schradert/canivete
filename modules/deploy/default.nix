@@ -92,12 +92,12 @@ in {
   config = let
     typeNodes = type: let
       inherit (lib) attrValues filterAttrs getAttrFromPath head length mapAttrs pipe;
-      isType = builtins.filterAttrs (_: profile: profile.canivete.type == type);
+      isType = lib.filterAttrs (_: profile: profile.canivete.type == type);
       typeProfiles = funcs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funcs);
     in
       lib.pipe nodes [
         # TODO what happens if there are multiple "system"-type configurations?!
-        (builtins.filterAttrs (_: typeProfiles [builtins.length (l: l == 1)]))
+        (lib.filterAttrs (_: typeProfiles [builtins.length (l: l == 1)]))
         (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.getAttrFromPath ["canivete" "configuration"])]))
       ];
     nixosConfigurations = typeNodes "nixos";
