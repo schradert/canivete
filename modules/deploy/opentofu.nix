@@ -3,25 +3,26 @@
   config,
   lib,
   ...
-}: {
+}: let
+  inherit (config.canivete.deploy) canivete nodes;
+in {
   perSystem.canivete.opentofu.workspaces.deploy = {
     plugins = ["hashicorp/null" "hashicorp/external"];
     modules.imports = let
       getProfileImport = lib.getAttrFromPath ["canivete" "configuration" "config" "canivete" "opentofu"];
       getNodeImports = node: map getProfileImport (builtins.attrValues node.profiles);
     in
-      lib.pipe config.canivete.deploy.nodes [builtins.attrValues (builtins.concatMap getNodeImports)];
+      lib.pipe nodes [builtins.attrValues (builtins.concatMap getNodeImports)];
   };
   canivete.deploy = _: {
     options.nodes = can.attrs.withSubmodule {
       options.profiles = can.attrs.withSubmodule ({
         config,
-        flake,
         name,
         node,
         ...
       }: let
-        inherit (flake.config.canivete) flakes;
+        inherit (canivete) flakes;
         inherit (config.canivete) type;
         resource_name = "${type}_${node.name}_${name}";
         nixFlags = can.ifElse (type == "droid") "--impure" "";
