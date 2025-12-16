@@ -113,6 +113,7 @@ in {
       ];
       perSystem = {system, ...}: {
         checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
+        canivete.devenv.shells.default.packages = [flakes.deploy.packages.${system}.default];
       };
     };
 }
