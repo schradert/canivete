@@ -2,6 +2,7 @@ profile @ {
   can,
   flake,
   config,
+  name,
   node,
   perSystem,
   ...
