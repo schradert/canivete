@@ -117,7 +117,7 @@ lib: let
   };
 
   # Options
-  wrapped = wrapper: more: let
+  wrapped = wrapper: nested: more: let
     option = type: description: more: lib.mkOption ({inherit type description;} // more);
     overlayDefault = _: _: {};
   in
@@ -182,13 +182,18 @@ lib: let
             option (wrapper (submoduleWith args module)) description {default = {};};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
         })
+      (lib.mergeAttrs (builtins.mapAttrs (_: utils.evalWith more) nested))
     ];
-  simple = wrapped lib.id {};
-  opt = (wrapped types.nullOr {default = null;}) // {inherit attrs function list;};
-  attrs = (wrapped types.attrsOf {default = {};}) // {inherit attrs function list opt;};
-  list = (wrapped types.listOf {default = [];}) // {inherit attrs function list opt;};
-  function = (wrapped types.functionTo {}) // {inherit attrs function list opt;};
-  options = simple // {inherit attrs function list opt;};
+  opt = wrapped types.nullOr {inherit attrs function list;};
+  attrs = wrapped types.attrsOf {inherit attrs function list opt;};
+  list = wrapped types.listOf {inherit attrs function list opt;};
+  function = wrapped types.functionTo {inherit attrs function list opt;};
+  options = (wrapped lib.id {} {}) // {
+    attrs = attrs {default = {};};
+    function = function {};
+    list = list {default = [];};
+    opt = opt {default = null;};
+  };
 
   can = lib.mergeAttrsList [
     options
