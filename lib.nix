@@ -159,7 +159,7 @@ lib: let
             specialArgs = args // {inherit can;};
           };
         mkOpt = type: defaults: description: _more:
-          option type description (defaults // more // _more);
+          option (wrapper type) description (defaults // more // _more);
       in
         lib.mergeAttrs old {
           option = type: mkOpt type {};
@@ -176,10 +176,8 @@ lib: let
           overlay = description: _more: old.overlay description ({default = overlayDefault;} // more // _more);
           enum = values: mkOpt (types.enum values) {};
           enable = mkOpt types.bool {default = false;};
-          submodule = description: module:
-            option (wrapper (submoduleWith {} module)) description {default = {};};
-          submoduleWith = description: args: module:
-            option (wrapper (submoduleWith args module)) description {default = {};};
+          submodule = description: module: mkOpt (submoduleWith {} module) {default = {};} description {};
+          submoduleWith = description: args: module: mkOpt (submoduleWith args module) {default = {};} description {};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
         })
       (lib.mergeAttrs (builtins.mapAttrs (_: utils.evalWith more) nested))
