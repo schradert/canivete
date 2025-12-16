@@ -20,7 +20,9 @@ in {
           macos = "aarch64-darwin";
           android = "aarch64-linux";
         }
-        .${config.canivete.os}
+        .${
+          config.canivete.os
+        }
         or "x86_64-linux";
     };
   };

@@ -28,7 +28,9 @@ in {
             linux = "home-manager";
             android = "droid";
           }
-          .${os};
+          .${
+            os
+          };
       };
       activator = can.function.pathInStore "how to build activation script from derivation" {
         default =
@@ -37,7 +39,9 @@ in {
             droid = base: (activate.custom // {dryActivate = "$PROFILE/activate switch --dry-run";}) base.activationPackage "$PROFILE/activate switch";
             custom = base: activate.custom base.canivete.activationPackage (lib.getExe base.canivete.activationPackage);
           }
-          .${type};
+          .${
+            type
+          };
       };
       args = can.attrs.anything "arguments based to configuration" {};
       builder = can.function.raw "convert modules to configurations" {
@@ -73,7 +77,9 @@ in {
                 modules = [modules];
               };
           }
-          .${type};
+          .${
+            type
+          };
       };
     };
   };
@@ -87,7 +93,9 @@ in {
       lib.mkDefault (users.${type} or null);
     canivete.args = {inherit can flake node perSystem profile;};
     canivete.configuration =
-      modules.${type}
+      modules.${
+        type
+      }
       or {
         options.canivete.activationPackage = can.package "final package for custom profile" {};
       };

@@ -1,5 +1,4 @@
 {
-  config,
   flake,
   lib,
   perSystem,

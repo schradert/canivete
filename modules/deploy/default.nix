@@ -38,7 +38,6 @@ in {
       canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
-        # TODO when should I replace this with nixos-facter, etc.?
         shared = {node, ...}: {nixpkgs.hostPlatform = node.config.canivete.system;};
         home-manager = {profile, ...}: {
           imports = [modules.shared];
@@ -91,7 +90,6 @@ in {
   };
   config = let
     typeNodes = type: let
-      inherit (lib) attrValues filterAttrs getAttrFromPath head length mapAttrs pipe;
       isType = lib.filterAttrs (_: profile: profile.canivete.type == type);
       typeProfiles = funcs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funcs);
     in
