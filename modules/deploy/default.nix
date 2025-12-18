@@ -9,32 +9,35 @@ flake @ {
 }: let
   inherit (config.canivete.meta) people;
   inherit (config.canivete.deploy) nodes;
-  inherit (config.canivete.deploy.canivete) flakes modules;
+  inherit (config.canivete.deploy.canivete) enable flakes modules;
 in {
   imports = [./opentofu.nix];
   options.canivete.deploy = can.submodule "deploy-rs with a twist" {
     imports = [./generic.nix];
     options = {
       nodes = can.attrs.submoduleWith "nodes to deploy profiles to" {inherit flake;} ./node.nix;
-      canivete.flakes = {
-        deploy = can.flake inputs "deploy-rs" {};
-        nixos = can.flake inputs "nixpkgs" {};
-        darwin = can.flake inputs "nix-darwin" {};
-        droid = can.flake inputs "nix-on-droid" {};
-        home-manager = can.flake inputs "home-manager" {};
-        anywhere = can.flake inputs "nixos-anywhere" {};
-        disko = can.flake inputs "disko" {};
-      };
-      canivete.modules = {
-        home-manager = can.module "home-manager modules" {};
-        nixos = can.module "nixos modules" {};
-        darwin = can.module "nix-darwin modules" {};
-        droid = can.module "nix-on-droid modules" {};
-        system = can.module "shared modules for system deployment (i.e. nixos, darwin, droid)" {};
-        shared = can.module "shared modules for all deployments (including home-manager)" {};
+      canivete = {
+        enable = can.enable "node deployment with deploy-rs" {default = flakes.deploy != null;};
+        flakes = {
+          deploy = can.flake inputs "deploy-rs" {};
+          nixos = can.flake inputs "nixpkgs" {};
+          darwin = can.flake inputs "nix-darwin" {};
+          droid = can.flake inputs "nix-on-droid" {};
+          home-manager = can.flake inputs "home-manager" {};
+          anywhere = can.flake inputs "nixos-anywhere" {};
+          disko = can.flake inputs "disko" {};
+        };
+        modules = {
+          home-manager = can.module "home-manager modules" {};
+          nixos = can.module "nixos modules" {};
+          darwin = can.module "nix-darwin modules" {};
+          droid = can.module "nix-on-droid modules" {};
+          system = can.module "shared modules for system deployment (i.e. nixos, darwin, droid)" {};
+          shared = can.module "shared modules for all deployments (including home-manager)" {};
+        };
       };
     };
-    config = {
+    config = lib.mkIf enable {
       canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
@@ -103,7 +106,7 @@ in {
     nixOnDroidConfigurations = typeNodes "droid";
     homeManagerConfigurations = typeNodes "home-manager";
   in
-    lib.mkIf (nodes != {}) {
+    lib.mkIf (enable && (nodes != {})) {
       flake = lib.mkMerge [
         {deploy = lib.filterAttrsRecursive (name: value: name != "canivete" && value != null) config.canivete.deploy;}
         (lib.mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
