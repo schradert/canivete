@@ -120,6 +120,19 @@ lib: let
   wrapped = wrapper: nested: more: let
     option = type: description: more: lib.mkOption ({inherit type description;} // more);
     overlayDefault = _: _: {};
+    # Fixes nested option wrapping
+    wrapOptions = value:
+      if lib.isFunction value then
+        arg: wrapOptions (value arg)
+      else if builtins.isList value then
+        builtins.map wrapOptions value
+      else if builtins.isAttrs value then
+        if (value._type or null) == "option" && (value ? type) then
+          value // {type = wrapper value.type;}
+        else
+          builtins.mapAttrs (_: wrapOptions) value
+      else
+        value;
   in
     lib.pipe [
       "anything"
@@ -180,7 +193,7 @@ lib: let
           submoduleWith = description: args: module: mkOpt (submoduleWith args module) {default = {};} description {};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
         })
-      (lib.mergeAttrs (builtins.mapAttrs (_: utils.evalWith more) nested))
+      (lib.mergeAttrs (builtins.mapAttrs (_: utils.pipe' [(utils.evalWith more) wrapOptions]) nested))
     ];
   opt = wrapped types.nullOr {inherit attrs function list;};
   attrs = wrapped types.attrsOf {inherit attrs function list opt;};
