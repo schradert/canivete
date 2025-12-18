@@ -11,7 +11,7 @@
     flake.config.canivete.deploy.nodes;
   hasKubernetesNode = nixosClusterNodes != {};
 in {
-  config = lib.mkIf (hasKubernetesNode && perSystem.config.canivete.opentofu.enable) {
+  config = lib.mkIf (hasKubernetesNode && flake.config.canivete.opentofu.enable) {
     passwords.k8s-token.length = 21;
     plugins = ["hashicorp/null"];
     modules = {

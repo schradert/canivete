@@ -122,17 +122,16 @@ lib: let
     overlayDefault = _: _: {};
     # Fixes nested option wrapping
     wrapOptions = value:
-      if lib.isFunction value then
-        arg: wrapOptions (value arg)
-      else if builtins.isList value then
-        builtins.map wrapOptions value
-      else if builtins.isAttrs value then
-        if (value._type or null) == "option" && (value ? type) then
-          value // {type = wrapper value.type;}
-        else
-          builtins.mapAttrs (_: wrapOptions) value
-      else
-        value;
+      if lib.isFunction value
+      then arg: wrapOptions (value arg)
+      else if builtins.isList value
+      then builtins.map wrapOptions value
+      else if builtins.isAttrs value
+      then
+        if (value._type or null) == "option" && (value ? type)
+        then value // {type = wrapper value.type;}
+        else builtins.mapAttrs (_: wrapOptions) value
+      else value;
   in
     lib.pipe [
       "anything"

@@ -1,9 +1,6 @@
 {
   description = "Useful flake-parts modules";
   inputs = {
-    # TODO is it possible to introduce new inputs in repos and check for those in modules?
-    # something like canivete.inputs.deploy-rs.url = "github:serokell/deploy-rs"; without top-level here
-
     # Essential
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";

@@ -2,9 +2,16 @@
 # OpenTofu has issues finding Terraform plugins added with .withPlugins, so this module will patch that
 # NOTE https://github.com/nix-community/nixpkgs-terraform-providers-bin/issues/52
 # TODO try out the flake module!
-flake @ {inputs, ...}: {
-  perSystem = perSystem @ {
-    can,
+flake @ {
+  can,
+  config,
+  inputs,
+  ...
+}: let
+  inherit (config.canivete.opentofu) enable;
+in {
+  options.canivete.opentofu.enable = can.enable "opentofu workspaces" {default = inputs ? terranix;};
+  config.perSystem = perSystem @ {
     config,
     lib,
     pkgs,
@@ -12,11 +19,10 @@ flake @ {inputs, ...}: {
   }: let
     inherit (config.canivete) opentofu;
   in {
-    config = lib.mkIf opentofu.enable {
+    config = lib.mkIf enable {
       canivete.devenv.shells.default.scripts.tofu.exec = "nix run .#canivete.$(nix eval --raw --impure --expr \"builtins.currentSystem\").opentofu.script \"\${NIX_OPTIONS[@]}\" -- \"$@\"";
     };
     options.canivete.opentofu = {
-      enable = can.enable "opentofu workspaces" {default = inputs ? terranix;};
       directory = can.str "path relative to project root to store opentofu state" {default = ".canivete/opentofu";};
       script = can.package "activation script" {
         default = pkgs.writeShellApplication {
