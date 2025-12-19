@@ -137,6 +137,7 @@ lib: let
       "anything"
       "bool"
       "int"
+      "lines"
       "package"
       "path"
       "raw"
