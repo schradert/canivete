@@ -38,13 +38,13 @@ in {
       canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
-        shared = {node, ...}: {nixpkgs.hostPlatform = node.config.canivete.system;};
         home-manager = {profile, ...}: {
           imports = [modules.shared];
           home.username = profile.config.name;
         };
         system = lib.mkMerge [
           modules.shared
+          ({node, ...}: {nixpkgs.hostPlatform = node.config.canivete.system;})
           (lib.mkIf (flakes.home-manager != null) (systemConfiguration @ {
             node,
             perSystem,
