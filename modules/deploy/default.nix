@@ -40,7 +40,9 @@ in {
       in {
         home-manager = {profile, ...}: {
           imports = [modules.shared];
-          home.username = profile.name;
+          # config = lib.mkIf (profile.config.canivete.type == "home-manager") {
+          #   home.username = lib.mkDefault profile.name;
+          # };
         };
         system = lib.mkMerge [
           modules.shared
@@ -55,7 +57,7 @@ in {
           }: {
             home-manager.extraSpecialArgs = {inherit can flake node perSystem profile systemConfiguration;};
             home-manager.sharedModules = [modules.home-manager];
-            home-manager.users = builtins.mapAttrs (username: _: {home = {inherit username;};}) people.users;
+            home-manager.users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) people.users;
           }))
         ];
         nixos = lib.mkMerge [
