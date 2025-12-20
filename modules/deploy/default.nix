@@ -40,7 +40,7 @@ in {
       in {
         home-manager = {profile, ...}: {
           imports = [modules.shared];
-          home.username = profile.config.name;
+          home.username = profile.name;
         };
         system = lib.mkMerge [
           modules.shared
