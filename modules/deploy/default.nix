@@ -44,22 +44,22 @@ in {
           #   home.username = lib.mkDefault profile.name;
           # };
         };
-        system = lib.mkMerge [
-          modules.shared
-          ({node, ...}: {nixpkgs.hostPlatform = node.config.canivete.system;})
-          (lib.mkIf (flakes.home-manager != null) (systemConfiguration @ {
-            node,
-            perSystem,
-            # deadnix: skip
-            pkgs,
-            profile,
-            ...
-          }: {
-            home-manager.extraSpecialArgs = {inherit can flake node perSystem profile systemConfiguration;};
-            home-manager.sharedModules = [modules.home-manager];
-            home-manager.users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) people.users;
-          }))
-        ];
+        system = systemConfiguration @ {
+          node,
+          perSystem,
+          # deadnix: skip
+          pkgs,
+          profile,
+          ...
+        }: {
+          imports = [modules.shared];
+          nixpkgs.hostPlatform = node.config.canivete.system;
+          home-manager = lib.mkIf (flakes.home-manager != null) {
+            extraSpecialArgs = {inherit can flake node perSystem profile systemConfiguration;};
+            sharedModules = [modules.home-manager];
+            users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) people.users;
+          };
+        };
         nixos = lib.mkMerge [
           {
             imports = [hostnameModule modules.system];
