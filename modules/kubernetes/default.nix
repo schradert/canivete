@@ -15,7 +15,7 @@ in {
       envs = can.attrs.module "environment configs" {};
       charts = can.attrs.anything "nixidy charts" {};
       libOverlay = can.overlay "extra lib functions" {};
-      k8s = can.enum ["k3s" "rke2"] "kubernetes distribution" {};
+      k8s = can.enum ["k3s" "rke2"] "kubernetes distribution" {default = "k3s";};
     };
     config = {
       args = {inherit can flake nixidy;};
