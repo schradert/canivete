@@ -20,7 +20,10 @@
       imports = [./modules];
       flake = {
         inherit can;
-        templates.default.path = ./template;
+        templates.default = {
+          path = ./template;
+          description = "Basic template";
+        };
         lib.mkFlake = args: module: let
           _args = lib.mergeAttrs (builtins.removeAttrs args ["everything"]) {
             inputs = inputs // args.inputs;
