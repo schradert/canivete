@@ -87,6 +87,7 @@ in {
       users = {
         home-manager = name;
         nixos = "root";
+        darwin = "root";
       };
     in
       lib.mkDefault (users.${type} or null);
