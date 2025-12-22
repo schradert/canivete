@@ -44,9 +44,9 @@ in {
         };
         home-manager = {profile, ...}: {
           imports = [modules.shared];
-          # config = lib.mkIf (profile.config.canivete.type == "home-manager") {
-          #   home.username = lib.mkDefault profile.name;
-          # };
+          config = lib.mkIf (profile.config.canivete.type == "home-manager") {
+            home.username = lib.mkDefault profile.name;
+          };
         };
         system = systemConfiguration @ {
           node,

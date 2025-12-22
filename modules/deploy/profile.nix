@@ -90,7 +90,14 @@ in {
       };
     in
       lib.mkDefault (users.${type} or null);
-    canivete.args = {inherit can flake node profile;};
+    canivete.args = {
+      inherit can flake node;
+      # Avoid fixpoint infinite recursion
+      profile = {
+        inherit name;
+        config = {inherit (config) canivete;};
+      };
+    };
     canivete.configuration =
       modules.${
         type
