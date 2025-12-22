@@ -5,7 +5,6 @@ profile @ {
   lib,
   name,
   node,
-  perSystem,
   ...
 }: let
   inherit (config.canivete) activator args builder configuration type;
@@ -91,7 +90,7 @@ in {
       };
     in
       lib.mkDefault (users.${type} or null);
-    canivete.args = {inherit can flake node perSystem profile;};
+    canivete.args = {inherit can flake node profile;};
     canivete.configuration =
       modules.${
         type

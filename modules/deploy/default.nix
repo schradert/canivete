@@ -38,6 +38,10 @@ in {
       canivete.modules = let
         hostnameModule = {node, ...}: {networking.hostName = node.config.hostname;};
       in {
+        shared = {pkgs, ...}: {
+          # Must instantiate within module (i.e. can't pass through specialArgs because deploy-rs eagerly evaluates)
+          _module.args.perSystem = flake.withSystem pkgs.stdenv.hostPlatform.system lib.id;
+        };
         home-manager = {profile, ...}: {
           imports = [modules.shared];
           # config = lib.mkIf (profile.config.canivete.type == "home-manager") {
