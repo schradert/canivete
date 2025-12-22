@@ -2,7 +2,6 @@ node @ {
   can,
   flake,
   config,
-  lib,
   name,
   ...
 }: {

@@ -192,7 +192,7 @@ lib: let
           submodule = description: module: mkOpt (submoduleWith {} module) {default = {};} description {};
           submoduleWith = description: args: module: mkOpt (submoduleWith args module) {default = {};} description {};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
-          module = description: _more: old.module  description ({default = {};} // more // _more);
+          module = description: _more: old.module description ({default = {};} // more // _more);
         })
       (lib.mergeAttrs (builtins.mapAttrs (_: utils.pipe' [(utils.evalWith more) wrapOptions]) nested))
     ];
