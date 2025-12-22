@@ -3,14 +3,14 @@
   config,
   flake,
   lib,
-  nixidy,
   node,
   pkgs,
   ...
 }: let
   inherit (config.canivete) kubernetes;
-  inherit (flake.config.canivete.meta) domain root;
-  inherit (nixidy.config) k8s;
+  inherit (flake.config.canivete) meta nixidy;
+  inherit (meta) domain root;
+  inherit (nixidy) k8s;
   cfg = config.services.${k8s};
   isRoot = node.name == root;
 in {
