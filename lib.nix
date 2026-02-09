@@ -184,6 +184,10 @@ lib: let
             option = pkgs: mkOpt (pkgs.formats.toml {}).type {default = {};};
             generate = pkgs: (pkgs.formats.toml {}).generate;
           };
+          json = {
+            option = pkgs: mkOpt (pkgs.formats.json {}).type {default = {};};
+            generate = pkgs: (pkgs.formats.json {}).generate;
+          };
           # TODO should I do a check for _flake type?
           flake = inputs: name: mkOpt (types.nullOr types.raw) {default = inputs.${name} or null;} name;
           overlay = description: _more: old.overlay description ({default = overlayDefault;} // more // _more);

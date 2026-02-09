@@ -8,6 +8,7 @@
 
     # Development
     devenv.url = "github:cachix/devenv";
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
   outputs = inputs: let
     specialArgs.can = import ./lib.nix inputs.nixpkgs.lib;
@@ -33,6 +34,10 @@
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};
       };
-      perSystem.canivete.devenv.shells.default.languages.shell.enable = true;
+      perSystem.canivete.devenv.shells.default = {
+        languages.shell.enable = true;
+        # Currently only developing on the main branch right now
+        git-hooks.hooks.no-commit-to-branch.settings.branch = lib.mkForce [];
+      };
     });
 }
