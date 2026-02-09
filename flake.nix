@@ -17,7 +17,7 @@
       lib,
       ...
     }: {
-      imports = [./modules];
+      imports = [./modules ./shared];
       flake = {
         inherit can;
         templates.default = {
@@ -29,7 +29,7 @@
             inputs = inputs // args.inputs;
             specialArgs = specialArgs // (args.specialArgs or {});
           };
-          imports = lib.concat [module ./modules] (can.filesets.nix.everything (args.everything or []));
+          imports = lib.concat [module ./modules ./shared] (can.filesets.nix.everything (args.everything or []));
         in
           inputs.flake-parts.lib.mkFlake _args {inherit imports;};
       };

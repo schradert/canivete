@@ -1,6 +1,6 @@
 {
   can,
-  flake,
+  top,
   config,
   lib,
   name,
@@ -9,7 +9,7 @@
 }: let
   inherit (config.canivete) activator args builder configuration type;
   inherit (node.config.canivete) os system;
-  inherit (flake.config.canivete.deploy.canivete) flakes modules;
+  inherit (top.config.canivete.deploy.canivete) flakes modules;
   inherit (flakes.deploy.lib.${system}) activate;
 in {
   imports = [./generic.nix];
@@ -57,14 +57,14 @@ in {
                 modules = [modules];
               };
             droid = modules:
-              flake.withSystem system ({pkgs, ...}:
+              top.withSystem system ({pkgs, ...}:
                 flakes.droid.lib.nixOnDroidConfiguration {
                   inherit pkgs;
                   extraSpecialArgs = args;
                   modules = [modules];
                 });
             home-manager = modules:
-              flake.withSystem system ({pkgs, ...}:
+              top.withSystem system ({pkgs, ...}:
                 flakes.home-manager.lib.homeManagerConfiguration {
                   inherit pkgs;
                   extraSpecialArgs = args;
@@ -92,7 +92,7 @@ in {
     in
       lib.mkDefault (users.${type} or null);
     canivete.args = {
-      inherit can flake node;
+      inherit can top node;
       # Avoid fixpoint infinite recursion
       profile = {
         inherit name;

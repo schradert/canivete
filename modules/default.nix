@@ -6,14 +6,12 @@
   ...
 }: {
   imports = [
-    ./deploy
+    ./devenv.nix
+    ./deploy.nix
+    ./pkgs.nix
     ./kubernetes
     ./opentofu
-    ./pkgs
     ./sops
-
-    ./devenv.nix
-    ./meta.nix
   ];
   systems = lib.mkDefault (import inputs.systems);
   perSystem._module.args = {inherit can;};

@@ -1,4 +1,4 @@
-flake @ {
+top @ {
   can,
   config,
   inputs,
@@ -11,11 +11,12 @@ flake @ {
   inherit (config.canivete.deploy) nodes;
   inherit (config.canivete.deploy.canivete) flakes modules;
 in {
-  imports = [./opentofu.nix];
+  # FIXME get this import right for shared
+  # imports = [./opentofu.nix];
   options.canivete.deploy = can.submodule "deploy-rs with a twist" {
     imports = [./generic.nix];
     options = {
-      nodes = can.attrs.submoduleWith "nodes to deploy profiles to" {inherit flake;} ./node.nix;
+      nodes = can.attrs.submoduleWith "nodes to deploy profiles to" {inherit top;} ./node.nix;
       canivete.flakes = {
         deploy = can.flake inputs "deploy-rs" {};
         nixos = can.flake inputs "nixpkgs" {};
@@ -40,7 +41,7 @@ in {
       in {
         shared = {pkgs, ...}: {
           # Must instantiate within module (i.e. can't pass through specialArgs because deploy-rs eagerly evaluates)
-          _module.args.perSystem = flake.withSystem pkgs.stdenv.hostPlatform.system lib.id;
+          _module.args.perSystem = top.withSystem pkgs.stdenv.hostPlatform.system lib.id;
         };
         home-manager = {profile, ...}: {
           imports = [modules.shared];
@@ -59,7 +60,7 @@ in {
           imports = [modules.shared];
           nixpkgs.hostPlatform = node.config.canivete.system;
           home-manager = lib.mkIf (flakes.home-manager != null) {
-            extraSpecialArgs = {inherit can flake node perSystem profile systemConfiguration;};
+            extraSpecialArgs = {inherit can top node perSystem profile systemConfiguration;};
             sharedModules = [modules.home-manager];
             users = builtins.mapAttrs (username: _: {home.username = lib.mkDefault username;}) people.users;
           };
@@ -94,32 +95,4 @@ in {
       };
     };
   };
-  config = let
-    typeNodes = type: let
-      isType = lib.filterAttrs (_: profile: profile.canivete.type == type);
-      typeProfiles = funcs: node: lib.pipe node.profiles ([isType builtins.attrValues] ++ funcs);
-    in
-      lib.pipe nodes [
-        # TODO what happens if there are multiple "system"-type configurations?!
-        (lib.filterAttrs (_: typeProfiles [builtins.length (l: l == 1)]))
-        (builtins.mapAttrs (_: typeProfiles [builtins.head (lib.getAttrFromPath ["canivete" "configuration"])]))
-      ];
-    nixosConfigurations = typeNodes "nixos";
-    darwinConfigurations = typeNodes "darwin";
-    nixOnDroidConfigurations = typeNodes "droid";
-    homeManagerConfigurations = typeNodes "home-manager";
-  in
-    lib.mkIf (nodes != {}) {
-      flake = lib.mkMerge [
-        {deploy = lib.filterAttrsRecursive (name: value: name != "canivete" && value != null) config.canivete.deploy;}
-        (lib.mkIf (nixosConfigurations != {}) {inherit nixosConfigurations;})
-        (lib.mkIf (darwinConfigurations != {}) {inherit darwinConfigurations;})
-        (lib.mkIf (nixOnDroidConfigurations != {}) {inherit nixOnDroidConfigurations;})
-        (lib.mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
-      ];
-      perSystem = {system, ...}: {
-        checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
-        canivete.devenv.shells.default.packages = [flakes.deploy.packages.${system}.default];
-      };
-    };
 }
