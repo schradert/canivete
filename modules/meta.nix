@@ -1,6 +1,11 @@
-{can, ...}: {
+{
+  can,
+  config,
+  ...
+}: {
   options.canivete.meta = {
     domain = can.domain "base domain for exposing nodes and services" {};
+    root = can.opt.enum (builtins.attrNames config.canivete.deploy.nodes) "Root server" {};
     people = can.submodule "people in the organization" ({config, ...}: {
       options.users = can.attrs.submodule "all of the users to create configurations for" {
         options.name = can.str "name of the user to default to in all contexts" {example = "John Doe";};
