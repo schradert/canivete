@@ -24,7 +24,7 @@ in {
         selinux = true;
         token-file = config.sops.secrets."passwords/k8s-token".path;
       };
-      environment.etc."rancher/${k8s}/config.yaml".source = can.yaml.generate "${k8s}.yaml" kubernetes.yaml;
+      environment.etc."rancher/${k8s}/config.yaml".source = can.yaml.generate pkgs "${k8s}.yaml" kubernetes.yaml;
       environment.systemPackages = [pkgs.${k8s}];
       services.${k8s} = {
         enable = true;
