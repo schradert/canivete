@@ -41,7 +41,7 @@ in {
         ...
       }: {
         imports = [sops-nix.nixosModules.sops];
-        sops.age.keyFile = getFilepathHomeRelative config.users.users.${me}.home pkgs;
+        sops.age.keyFile = getFilepathHomeRelative config.users.users.root.home pkgs;
       };
       darwin = {pkgs, ...}: {
         imports = [sops-nix.darwinModules.sops];
