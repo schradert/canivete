@@ -8,7 +8,7 @@
   inherit (flake.config.canivete.meta) root;
 in {
   options.build.scripts.kubeconfig = can.package "command to connect cluster" {internal = true;};
-  config.build.scripts.kubeconfig = pkgs.mkShellApplication {
+  config.build.scripts.kubeconfig = pkgs.writeShellApplication {
     name = "kubeconfig";
     runtimeInputs = with pkgs; [openssh tinybox];
     # TODO fix these hardcoded values

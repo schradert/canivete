@@ -24,7 +24,7 @@ in {
       (builtins.map (app: builtins.filter (obj: !(builtins.elem (getGVKN obj) app.dotfiles.bootstrap.exclude)) app.objects))
       lib.flatten
     ];
-    build.scripts.bootstrap = pkgs.mkShellApplication {
+    build.scripts.bootstrap = pkgs.writeShellApplication {
       # Vals needs to run in the project root to read SOPS
       name = "nixidy-bootstrap-${config.nixidy.env}";
       runtimeInputs = [
