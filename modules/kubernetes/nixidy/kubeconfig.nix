@@ -10,7 +10,7 @@ in {
   options.build.scripts.kubeconfig = can.package "command to connect cluster" {internal = true;};
   config.build.scripts.kubeconfig = pkgs.writeShellApplication {
     name = "kubeconfig";
-    runtimeInputs = with pkgs; [openssh tinybox];
+    runtimeInputs = with pkgs; [openssh toybox];
     # TODO fix these hardcoded values
     text = ''
       KUBECONFIG="$(mktemp)"
