@@ -71,7 +71,8 @@ in {
         nixos = lib.mkMerge [
           {
             imports = [hostnameModule modules.system];
-            users.users = lib.flip builtins.mapAttrs people.users (username: person: {
+            # "root" is a special user name that will be excluded from normal users
+            users.users = lib.flip builtins.mapAttrs (removeAttrs people.users ["root"]) (username: person: {
               isNormalUser = true;
               home = "/home/${username}";
               description = person.name;
