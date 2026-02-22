@@ -5,7 +5,7 @@ flake @ {
   lib,
   ...
 }: let
-  inherit (config.canivete) nixidy;
+  inherit (config.canivete) nixidy sops;
 in {
   options.canivete.nixidy = can.submodule "nixidy" (nixidy: {
     options = {
@@ -24,8 +24,16 @@ in {
     };
   });
   config = lib.mkMerge [
-    {canivete.deploy.canivete.modules.nixos = ./nixos.nix;}
     {perSystem.canivete.opentofu.workspaces.deploy = ./opentofu.nix;}
+    {
+      canivete.deploy.canivete.modules.nixos = lib.mkMerge [
+        ./nixos.nix
+        (lib.mkIf sops.enable ({config, ...}: {
+          canivete.kubernetes.yaml.token-file = config.sops.secrets."passwords/k8s-token".path;
+          sops.secrets."passwords/k8s-token" = {};
+        }))
+      ];
+    }
     (lib.mkIf nixidy.enable {
       perSystem = perSystem @ {
         inputs',

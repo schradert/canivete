@@ -20,17 +20,13 @@ in {
   };
   config = lib.mkIf kubernetes.enable (lib.mkMerge [
     {
-      canivete.kubernetes.yaml = {
-        selinux = true;
-        token-file = config.sops.secrets."passwords/k8s-token".path;
-      };
+      canivete.kubernetes.yaml.selinux = true;
       environment.etc."rancher/${k8s}/config.yaml".source = can.yaml.generate pkgs "${k8s}.yaml" kubernetes.yaml;
       environment.systemPackages = [pkgs.${k8s}];
       services.${k8s} = {
         enable = true;
         role = lib.mkDefault "agent";
       };
-      sops.secrets."passwords/k8s-token" = {};
       virtualisation.containerd.enable = true;
     }
     (lib.mkIf (cfg.role == "server") {
