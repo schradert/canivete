@@ -20,8 +20,8 @@ in {
     applications.__bootstrap.objects = lib.pipe config.nixidy.publicApps [
       (builtins.filter (name: name != config.nixidy.appOfApps.name))
       (builtins.map (name: config.applications.${name}))
-      (builtins.filter (app: app.dotfiles.bootstrap.enable))
-      (builtins.map (app: builtins.filter (obj: !(builtins.elem (getGVKN obj) app.dotfiles.bootstrap.exclude)) app.objects))
+      (builtins.filter (app: app.canivete.bootstrap.enable))
+      (builtins.map (app: builtins.filter (obj: !(builtins.elem (getGVKN obj) app.canivete.bootstrap.exclude)) app.objects))
       lib.flatten
     ];
     build.scripts.bootstrap = pkgs.writeShellApplication {
