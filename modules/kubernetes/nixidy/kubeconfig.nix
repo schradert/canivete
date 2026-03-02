@@ -6,6 +6,8 @@
   ...
 }: let
   inherit (flake.config.canivete.meta) root;
+  cmds.k3s = "k3s kubectl config view --raw";
+  cmds.rke2 = "cat /etc/rancher/rke2/rke2.yaml";
 in {
   options.build.scripts.kubeconfig = can.package "command to connect cluster" {internal = true;};
   config.build.scripts.kubeconfig = pkgs.writeShellApplication {
@@ -16,7 +18,7 @@ in {
       KUBECONFIG="$(mktemp)"
       export KUBECONFIG
       trap 'rm -f "$KUBECONFIG"' EXIT
-      ssh ${root} sudo ${nixidy.config.k8s} kubectl config view --raw | \
+      ssh ${root} sudo ${cmds.${nixidy.config.k8s}} | \
         sed 's/127\.0\.0\.1/${root}/' \
         >"$KUBECONFIG"
       "''${@}"
