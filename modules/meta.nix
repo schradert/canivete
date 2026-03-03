@@ -3,7 +3,9 @@
   config,
   lib,
   ...
-}: {
+}: let
+  inherit (config.canivete.meta) domain;
+in {
   options.canivete.meta = {
     domain = can.domain "base domain for exposing nodes and services" {};
     root = can.opt.enum (builtins.attrNames config.canivete.deploy.nodes) "Root server" {};
@@ -15,7 +17,7 @@
           options.email = can.email "user profile email" {};
           options.sshPubKey = can.str "public key for connecting to nodes and services and accounts" {};
         };
-        config.profiles.default.email = lib.mkDefault "${name}@${config.canivete.meta.domain}";
+        config.profiles.default.email = lib.mkDefault "${name}@${domain}";
       });
       options.me = can.enum (builtins.attrNames config.users) "the super admin user in all contexts" {};
       options.my = can.raw "user details associated with 'me'" {default = config.users.${config.me};};
