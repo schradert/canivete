@@ -290,6 +290,73 @@
             ];
           };
         })
+        ({
+          config,
+          pkgs,
+          ...
+        }: {
+          options.languages.sql = {
+            enable = can.enable "SQL language tooling" {};
+            lsp.package = can.package "LSP language server" {
+              default = pkgs.rustPlatform.buildRustPackage rec {
+                pname = "sqlfluff-lsp";
+                version = "0.3.1";
+                src = pkgs.fetchFromGitHub {
+                  owner = "VasanthakumarV";
+                  repo = "sqlfluff-lsp";
+                  rev = "v${version}";
+                  hash = "sha256-scZwIKa9NcID0x/Nx1Nm9phZSxj2f5j1Yv9pOc4dc0M=";
+                };
+                cargoHash = "sha256-+hZsjYYXqmG9xIeO+64KOJziRw/GhiO1UY+If4pjHfE=";
+                buildInputs = [config.treefmt.config.programs.sqlfluff.package];
+                nativeCheckInputs = [config.treefmt.config.programs.sqlfluff.package];
+                meta = {
+                  description = "Language Server for the SQL linting & formatting tool, SQLFluff.";
+                  homepage = "https://github.com/${src.owner}/${src.repo}";
+                  license = lib.licenses.mit;
+                  mainProgram = "sqlfluff-lsp";
+                };
+              };
+            };
+          };
+          config = lib.mkIf config.languages.sql.enable {
+            treefmt.enable = true;
+            treefmt.config.programs = {
+              sqlfluff.enable = true;
+              sqlfluff.dialect = "snowflake";
+              sqlfluff-lint.enable = true;
+            };
+            packages = [config.languages.sql.lsp.package];
+            editors.zed.settings = {
+              lsp.sqlfluff-lsp = {};
+              languages.SQL = {
+                language_servers = ["sqlfluff-lsp"];
+                formatter = {
+                  external = {
+                    command = "sqlfluff";
+                    arguments = ["format" "-"];
+                  };
+                };
+                format_on_save = "on";
+              };
+            };
+            editors.helix.languages = {
+              language-server.sqlfluff-lsp = {
+                command = "sqlfluff-lsp";
+                args = ["serve"];
+              };
+              language = [
+                {
+                  name = "sql";
+                  formatter.command = "sqlfluff";
+                  formatter.args = ["format" "-"];
+                  language-servers = ["sqlfluff-lsp"];
+                  auto-format = true;
+                }
+              ];
+            };
+          };
+        })
       ];
     };
   };
