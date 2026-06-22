@@ -40,7 +40,7 @@ in {
         disable-kube-proxy = lib.mkDefault true;
         disable-scheduler = lib.mkDefault true;
         etcd-expose-metrics = lib.mkDefault true;
-        tls-san = lib.mkDefault [domain];
+        tls-san = lib.mkDefault (lib.unique [domain kubernetes.serverEndpoint]);
       };
     })
     (lib.mkIf isRoot {services.${k8s}.role = "server";})
