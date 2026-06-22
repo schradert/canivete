@@ -13,10 +13,15 @@
   inherit (nixidy) k8s;
   cfg = config.services.${k8s};
   isRoot = node.name == root;
+  supervisorPort =
+    if k8s == "rke2"
+    then 9345
+    else 6443;
 in {
   options.canivete.kubernetes = {
     enable = can.enable "kubernetes as a service" {};
     yaml = can.yaml.option pkgs "settings for config.yaml" {};
+    serverEndpoint = can.str "host non-root nodes register against; point at a load balancer for an HA control plane" {default = domain;};
   };
   config = lib.mkIf kubernetes.enable (lib.mkMerge [
     {
@@ -31,15 +36,15 @@ in {
     }
     (lib.mkIf (cfg.role == "server") {
       canivete.kubernetes.yaml = {
-        disable-cloud-controller = true;
-        disable-kube-proxy = true;
-        disable-scheduler = true;
-        etcd-expose-metrics = true;
-        tls-san = [domain];
+        disable-cloud-controller = lib.mkDefault true;
+        disable-kube-proxy = lib.mkDefault true;
+        disable-scheduler = lib.mkDefault true;
+        etcd-expose-metrics = lib.mkDefault true;
+        tls-san = lib.mkDefault (lib.unique [domain kubernetes.serverEndpoint]);
       };
     })
     (lib.mkIf isRoot {services.${k8s}.role = "server";})
-    (lib.mkIf (!isRoot) {canivete.kubernetes.yaml.server = "https://${domain}:6443";})
+    (lib.mkIf (!isRoot) {canivete.kubernetes.yaml.server = "https://${kubernetes.serverEndpoint}:${toString supervisorPort}";})
     (lib.mkIf (k8s == "k3s") (lib.mkMerge [
       {services.k3s.gracefulNodeShutdown.enable = true;}
       (lib.mkIf isRoot {services.k3s.clusterInit = true;})
