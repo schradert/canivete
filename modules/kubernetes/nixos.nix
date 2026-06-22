@@ -13,7 +13,6 @@
   inherit (nixidy) k8s;
   cfg = config.services.${k8s};
   isRoot = node.name == root;
-  # k3s serves the supervisor (node registration) on 6443; rke2 uses 9345.
   supervisorPort =
     if k8s == "rke2"
     then 9345
@@ -36,8 +35,6 @@ in {
       virtualisation.containerd.enable = true;
     }
     (lib.mkIf (cfg.role == "server") {
-      # mkDefault so downstream can override per-key (re-enable the scheduler,
-      # extend tls-san, etc.) without mkForce.
       canivete.kubernetes.yaml = {
         disable-cloud-controller = lib.mkDefault true;
         disable-kube-proxy = lib.mkDefault true;
