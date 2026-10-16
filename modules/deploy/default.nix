@@ -123,7 +123,10 @@ in {
         (lib.mkIf (homeManagerConfigurations != {}) {inherit homeManagerConfigurations;})
       ];
       perSystem = {system, ...}: {
-        checks = flakes.deploy.lib.${system}.deployChecks inputs.self.deploy;
+        checks = flakes.deploy.lib.${system}.deployChecks (inputs.self.deploy
+          // {
+            nodes = lib.filterAttrs (name: _: nodes.${name}.canivete.system == system) inputs.self.deploy.nodes;
+          });
         canivete.devenv.shells.default.packages = [flakes.deploy.packages.${system}.default];
       };
     };
