@@ -26,7 +26,10 @@ in {
   config = lib.mkIf sops.enable {
     canivete.deploy.canivete.modules = {
       # TODO should I use age.sshKeyPaths + age.generateKey
-      shared.sops.defaultSopsFile = inputs.self + "/" + sops.default;
+      shared.sops.defaultSopsFile = builtins.path {
+        path = inputs.self + "/" + sops.default;
+        name = "sops-${baseNameOf sops.default}";
+      };
       home-manager = {
         config,
         pkgs,
