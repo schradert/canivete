@@ -53,7 +53,8 @@
               # third-party
               commitizen.enable = true;
               gitleaks.enable = true;
-              gitleaks.entry = "${pkgs.gitleaks}/bin/gitleaks protect --redact";
+              # The upstream args scan the staged index, which is empty at push time.
+              gitleaks.stages = ["pre-commit"];
               lychee = {config, ...}: {
                 options.toml = can.toml.option pkgs "Contents of lychee.toml" {};
                 config.enable = true;
@@ -312,7 +313,7 @@
                 nativeCheckInputs = [config.treefmt.config.programs.sqlfluff.package];
                 meta = {
                   description = "Language Server for the SQL linting & formatting tool, SQLFluff.";
-                  homepage = "https://github.com/${src.owner}/${src.repo}";
+                  inherit (src.meta) homepage;
                   license = lib.licenses.mit;
                   mainProgram = "sqlfluff-lsp";
                 };
