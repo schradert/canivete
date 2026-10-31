@@ -312,7 +312,7 @@
                 nativeCheckInputs = [config.treefmt.config.programs.sqlfluff.package];
                 meta = {
                   description = "Language Server for the SQL linting & formatting tool, SQLFluff.";
-                  homepage = "https://github.com/${src.owner}/${src.repo}";
+                  homepage = "https://github.com/VasanthakumarV/sqlfluff-lsp";
                   license = lib.licenses.mit;
                   mainProgram = "sqlfluff-lsp";
                 };
