@@ -53,7 +53,6 @@
               # third-party
               commitizen.enable = true;
               gitleaks.enable = true;
-              gitleaks.entry = "${pkgs.gitleaks}/bin/gitleaks protect --redact";
               lychee = {config, ...}: {
                 options.toml = can.toml.option pkgs "Contents of lychee.toml" {};
                 config.enable = true;
