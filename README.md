@@ -15,6 +15,7 @@ Nix framework for common development and infrastructure tooling like:
 
 1. [Nix](https://nixos.org/download/)
 2. [Git](https://git-scm.com/), which can be installed easily through Nix
+3. When overriding the `devenv` input or its `git-hooks` input: git-hooks.nix at `1ba1dbfe28738c9a71c266be6efa5b89e75491a9` or later (cachix/git-hooks.nix#642), which defines the gitleaks hook
 
 ## Usage
 
