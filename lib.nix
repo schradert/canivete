@@ -66,6 +66,7 @@ lib: let
         convertTriplet = utils.pipe' [sliceToInt convertTripletInt];
       in
         builtins.genList (utils.pipe' [tripletAt convertTriplet]) nFullSlices;
+
       tail = let
         convertLastSlice = slice: let
           len = builtins.length slice;
@@ -197,6 +198,7 @@ lib: let
           submoduleWith = description: args: module: mkOpt (submoduleWith args module) {default = {};} description {};
           withSubmodule = module: lib.mkOption {type = wrapper (types.submodule module);};
           module = description: _more: old.module description ({default = {};} // more // _more);
+          attrTag = description: _more: tags: mkOpt (types.attrTag) {} description _more;
         })
       (lib.mergeAttrs (builtins.mapAttrs (_: utils.pipe' [(utils.evalWith more) wrapOptions]) nested))
     ];
